@@ -1,0 +1,15 @@
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+python-dotenv
+apscheduler
+langchain
+langchain-openai
+pydantic
+python-dotenv
+notion-client
+langchain-google-genai
+Flask
+pymongo
+cryptography
+Flask-Cors

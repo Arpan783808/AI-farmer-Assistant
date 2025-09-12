@@ -16,7 +16,7 @@ function Authentication() {
     phone: "",
     password: "",
   });
-
+ 
   const [signupData, setSignupData] = useState({
     fullName: "",
     phone: "",
