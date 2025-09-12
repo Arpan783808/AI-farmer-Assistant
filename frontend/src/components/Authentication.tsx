@@ -10,7 +10,7 @@ function Authentication() {
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE =
-    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:3000";
+    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
 
   const [loginData, setLoginData] = useState({
     phone: "",

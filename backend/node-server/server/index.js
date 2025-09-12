@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 import admin from "firebase-admin";
 import firebaseInit from './config/firebaseInit.js';
 
-// import authRoutes from './routes/auth.route.js';
+import authRoutes from './routes/auth.route.js';
 
 dotenv.config();
 connectDB();
@@ -34,7 +34,7 @@ const PORT = process.env.PORT || 3000;
 
 
 
-// app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 app.use((err, req, res, next) => {
     console.error('Server error:', err);

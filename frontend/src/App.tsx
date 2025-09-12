@@ -3,6 +3,7 @@ import { Navigation } from "./components/Navigation";
 import { HeroSection } from "./components/HeroSection";
 import Authentication from "./components/Authentication.tsx";
 import Agent from "./components/Agent.tsx";
+import Lctest from "./pages/Lctest.jsx";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         />
         <Route path="/agent" element={<Agent />} />;
         <Route path="/login" element={<Authentication />} />
+        <Route path="/ltest" element={<Lctest />} />
       </Routes>
     </div>
   );
