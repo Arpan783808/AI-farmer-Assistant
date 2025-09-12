@@ -15,7 +15,7 @@ async function makeUniqueUsername(base) {
 
 export const signin = async (req, res) => {
   const { idToken, username } = req.body;
-    console.log("Received idToken length:", idToken ? idToken.length : 0);
+  console.log("Received idToken length:", idToken ? idToken.length : 0);
 
   if (!idToken) return res.status(400).json({ error: "idToken missing" });
 
@@ -27,20 +27,20 @@ export const signin = async (req, res) => {
     console.log(3);
     const uid = decoded.uid;
     console.log(4);
-    
+
     if (!phoneNumber) return res.status(400).json({ error: "No phone in token" });
     let user = await User.findOne({ firebaseUid: uid }) || await User.findOne({ primaryPhone: phoneNumber });
     console.log(5);
-    
+
     if (!user) {
       console.log(6);
       let baseUsername = username || phoneNumber.replace(/\D/g, "");
       baseUsername = baseUsername.slice(0, 20);
       const uniqueUsername = await makeUniqueUsername(baseUsername);
-      
+
       const randomPassword = crypto.randomBytes(12).toString("hex");
       const hashed = await bcrypt.hash(randomPassword, 10);
-      
+
       user = await User.create({
         username: uniqueUsername,
         primaryPhone: phoneNumber,
@@ -58,7 +58,7 @@ export const signin = async (req, res) => {
         console.log(9);
       }
     }
-    const expiresIn = 5 * 24 * 60 * 60 * 1000; 
+    const expiresIn = 5 * 24 * 60 * 60 * 1000;
     const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
     res.cookie("session", sessionCookie, {
       maxAge: expiresIn,
@@ -74,17 +74,77 @@ export const signin = async (req, res) => {
       isPhoneVerified: user.isPhoneVerified,
     };
     console.log(10);
-    
-    res.json({ 
-      token:sessionCookie,
+
+    res.json({
+      token: sessionCookie,
       user: publicUser
-     });
+    });
     console.log(11);
   } catch (err) {
     console.error(err);
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
+
+export const google = async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) return res.status(400).json({ error: "idToken missing" });
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const email = decoded.email;
+    const uid = decoded.uid;
+    const name = decoded.name || email.split("@")[0];
+    const googlePhotoUrl = decoded.picture;
+
+    let user =
+      (await User.findOne({ firebaseUid: uid })) ||
+      (await User.findOne({ email }));
+
+    if (!user) {
+      const baseUsername = name.toLowerCase().replace(/\s+/g, "").slice(0, 20);
+      const uniqueUsername = await makeUniqueUsername(baseUsername);
+
+      const randomPassword = crypto.randomBytes(12).toString("hex");
+      const hashed = await bcrypt.hash(randomPassword, 10);
+
+      user = await User.create({
+        username: uniqueUsername,
+        email,
+        password: hashed,
+        firebaseUid: uid,
+        profilePicture: googlePhotoUrl,
+        isPhoneVerified: decoded.email_verified || false,
+      });
+    } else if (!user.firebaseUid) {
+      user.firebaseUid = uid;
+      await user.save();
+    }
+
+    const expiresIn = 5 * 24 * 60 * 60 * 1000;
+    const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+
+    res.cookie("session", sessionCookie, {
+      maxAge: expiresIn,
+      httpOnly: true,
+      secure: false,
+      sameSite: "None",
+    });
+
+    const publicUser = {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePicture: user.profilePicture,
+    };
+
+    res.json({ token: sessionCookie, user: publicUser });
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
 
 export const checkSession = async (req, res) => {
   const sessionCookie = req.cookies.session || "";
