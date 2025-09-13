@@ -2,8 +2,9 @@ import express from 'express';
 import {
   createAlert,
   getActiveAlerts,
-  sendAlertNotifications
-} from '../controllers/';
+  sendAlertNotifications,
+  deleteAlert
+} from '../controllers/alert.controller.js';
 
 const router = express.Router();
 

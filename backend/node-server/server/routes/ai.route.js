@@ -92,7 +92,9 @@ router.post(
 
 			console.log('🐍 Launching Python with args:', pythonArgs.slice(1));
 
-			const pyProcess = spawn('python3', pythonArgs, {
+			const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+
+			const pyProcess = spawn(pythonCmd, pythonArgs, {
 				cwd: path.dirname(pythonScriptPath),
 				stdio: ['pipe', 'pipe', 'pipe'],
 				env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
