@@ -1,18 +1,28 @@
 import { useEffect, useState } from "react";
 import { Leaf } from "lucide-react";
+import { auth } from "../firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 export const Navigation = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("authToken");
-      setIsLoggedIn(!!token);
-    };
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setIsLoggedIn(false);
+      localStorage.removeItem("username");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 backdrop-blur-md rounded-2xl border border-blue-200/30 shadow-lg px-6 py-3 max-w-4xl w-full mx-4">
@@ -59,12 +69,21 @@ export const Navigation = () => {
           {/* Authentication / Agent Buttons */}
           <div className="flex items-center space-x-3">
             {isLoggedIn ? (
-              <a
-                href="/agent"
-                className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
-              >
-                Agent
-              </a>
+              <>
+                
+                <a
+                  href="/agent"
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
+                >
+                  Agent
+                </a>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-700 hover:text-red-600 font-medium transition-colors duration-200 text-sm"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <>
                 <a

@@ -32,10 +32,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api', authRoutes);
 
 app.use((err, req, res, next) => {
 	console.error('Server error:', err);

@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronDown } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
 export const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative bg-gradient-to-br from-blue-50 via-white to-emerald-50 min-h-screen flex items-center px-4 sm:px-6 lg:px-8 pt-20">
       <div className="max-w-7xl mx-auto w-full">
@@ -33,7 +34,7 @@ export const HeroSection = () => {
               className="animate-slide-up"
               style={{ animationDelay: "0.4s" }}
             >
-              <button className="group bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold text-lg inline-flex items-center space-x-3 transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 shadow-lg">
+              <button onClick={() => navigate("/agent")} className="group bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold text-lg inline-flex items-center space-x-3 transition-all duration-300 hover:shadow-xl hover:scale-105 active:scale-95 shadow-lg">
                 <span>Start My Free Trial</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
               </button>

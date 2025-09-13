@@ -14,44 +14,49 @@ async function makeUniqueUsername(base) {
 }
 
 export const signin = async (req, res) => {
-  const { idToken, username } = req.body;
-  console.log("Received idToken length:", idToken ? idToken.length : 0);
+  console.log("entered");
+  const { idToken, username, login } = req.body;
 
   if (!idToken) return res.status(400).json({ error: "idToken missing" });
 
   try {
-    console.log(1);
     const decoded = await admin.auth().verifyIdToken(idToken);
-    console.log(2);
     const phoneNumber = decoded.phone_number;
-    console.log(3);
     const uid = decoded.uid;
-    console.log(4);
-
-    if (!phoneNumber) return res.status(400).json({ error: "No phone in token" });
-    let user = await User.findOne({ firebaseUid: uid }) || await User.findOne({ primaryPhone: phoneNumber });
-    console.log(5);
-
+    if (!phoneNumber)
+      return res.status(400).json({ error: "No phone in token" });
+    let user =
+      (await User.findOne({ firebaseUid: uid })) ||
+      (await User.findOne({ primaryPhone: phoneNumber }));
+    console.log(user);
     if (!user) {
-      console.log(6);
+      if (login) {
+        return res.status(404).json({ message: "User not found." });
+      }
       let baseUsername = username || phoneNumber.replace(/\D/g, "");
       baseUsername = baseUsername.slice(0, 20);
       const uniqueUsername = await makeUniqueUsername(baseUsername);
 
       const randomPassword = crypto.randomBytes(12).toString("hex");
       const hashed = await bcrypt.hash(randomPassword, 10);
-
+      const { farmAddress, longitude, latitude } = req.body;
       user = await User.create({
         username: uniqueUsername,
         primaryPhone: phoneNumber,
         password: hashed,
         firebaseUid: uid,
         isPhoneVerified: true,
+        farmAddress: farmAddress,
+        location: {
+          type: "Point",
+          coordinates: [longitude, latitude],
+        },
       });
     } else {
-      console.log(7);
+      if (!login) {
+        return res.status(404).json({ message: "user already exisits" });
+      }
       if (!user.firebaseUid) {
-        console.log(8);
         user.firebaseUid = uid;
         user.isPhoneVerified = true;
         await user.save();
@@ -59,7 +64,9 @@ export const signin = async (req, res) => {
       }
     }
     const expiresIn = 5 * 24 * 60 * 60 * 1000;
-    const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+    const sessionCookie = await admin
+      .auth()
+      .createSessionCookie(idToken, { expiresIn });
     res.cookie("session", sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,
@@ -72,19 +79,17 @@ export const signin = async (req, res) => {
       primaryPhone: user.primaryPhone,
       profilePicture: user.profilePicture,
       isPhoneVerified: user.isPhoneVerified,
+      farmAddress: user.farmAddress,
     };
-    console.log(10);
-
     res.json({
       token: sessionCookie,
-      user: publicUser
+      user: publicUser,
     });
-    console.log(11);
   } catch (err) {
     console.error(err);
     return res.status(401).json({ error: "Invalid or expired token" });
   }
-}
+};
 
 export const google = async (req, res) => {
   const { idToken } = req.body;
@@ -122,7 +127,9 @@ export const google = async (req, res) => {
     }
 
     const expiresIn = 5 * 24 * 60 * 60 * 1000;
-    const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+    const sessionCookie = await admin
+      .auth()
+      .createSessionCookie(idToken, { expiresIn });
 
     res.cookie("session", sessionCookie, {
       maxAge: expiresIn,
@@ -145,27 +152,43 @@ export const google = async (req, res) => {
   }
 };
 
-
 export const checkSession = async (req, res) => {
   const sessionCookie = req.cookies.session || "";
   try {
-    const decodedClaims = await admin.auth().verifySessionCookie(sessionCookie, true);
+    const decodedClaims = await admin
+      .auth()
+      .verifySessionCookie(sessionCookie, true);
     const uid = decodedClaims.uid;
     const user = await User.findOne({ firebaseUid: uid });
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ user: { id: user._id, username: user.username, primaryPhone: user.primaryPhone } });
+    res.json({
+      user: {
+        id: user._id,
+        username: user.username,
+        primaryPhone: user.primaryPhone,
+      },
+    });
   } catch (err) {
     return res.status(401).json({ error: "Invalid session" });
   }
-}
-
+};
+export const checkPhone = async (req, res) => {
+  const { phone } = req.body;
+  try {
+    let user = await User.findOne({ primaryPhone: phone });
+    if (user) return res.status(404).json({ message: "user already exisits" });
+    return res.status(200).json({ message: "user not found" });
+  } catch (err) {
+    console.error(err);
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
 export const logout = async (req, res) => {
   const sessionCookie = req.cookies.session || "";
   try {
     const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
     await admin.auth().revokeRefreshTokens(decoded.uid);
-  } catch (e) {
-  }
+  } catch (e) {}
   res.clearCookie("session");
   res.json({ ok: true });
-}
+};

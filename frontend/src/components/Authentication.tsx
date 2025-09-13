@@ -1,46 +1,131 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-
+import { sendOtp, verifyOtp } from "../lib/auth_utils";
+import { useNavigate } from "react-router-dom";
+import { FarmLocationInput } from "./location";
 function Authentication() {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [idToken, setIdToken] = useState("");
+  // OTP verification states
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [userName, setuserName] = useState("User");
   const API_BASE =
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
 
   const [loginData, setLoginData] = useState({
     phone: "",
-    password: "",
   });
- 
+
   const [signupData, setSignupData] = useState({
-    fullName: "",
+    username: "",
     phone: "",
     password: "",
     confirmPassword: "",
-    farmLocation: "",
+    farmAddress: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     agreeToTerms: false,
+    login: false,
+    idToken: "",
   });
 
   const [resetPhone, setResetPhone] = useState("");
   const [resetSent, setResetSent] = useState(false);
 
+  // OTP verification functions
+  const sendOtp1 = async (phone: string, login: boolean) => {
+    setVerifyingOtp(true);
+    setError(null);
+
+    try {
+      if (login) {
+        const res = await fetch(`${API_BASE}/api/checkphone`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(`Login failed: ${errorData.message}`);
+        }
+      }
+      const res = await sendOtp(phone);
+      if (!res.ok) throw new Error(`Failed to send OTP `);
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err?.message || "Failed to send OTP");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const verifyOtp1 = async (otp: string) => {
+    setVerifyingOtp(true);
+    setError(null);
+    try {
+      const res = await verifyOtp(otp);
+      if (!res.ok) throw new Error(`OTP verification failed `);
+      setSignupData((prevData) => ({
+        ...prevData,
+        idToken: res.idToken,
+      }));
+      setIdToken(res.idToken);
+      setPhoneVerified(true);
+      setOtpSent(false);
+      setOtp("");
+    } catch (err: any) {
+      setError(err?.message || "Invalid OTP");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const resetVerification = () => {
+    setPhoneVerified(false);
+    setOtpSent(false);
+    setOtp("");
+    setVerifyingOtp(false);
+    setError(null);
+  };
+
   const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!phoneVerified) {
+      setError("Please verify your phone number first");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/login`, {
+      const res = await fetch(`${API_BASE}/api/phone`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
+        body: JSON.stringify({ idToken, username: "Tester", login: true }),
       });
-      if (!res.ok) throw new Error(`Login failed (${res.status})`);
-      // You can handle auth state/navigation here
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Login failed: ${errorData.message}`);
+      }
+
+      const data = await res.json();
+
+      // 1. Store the new username in a constant
+      const newUsername = data.user.username;
+
+      // 2. Use the new constant for both operations
+      setuserName(newUsername);
+      localStorage.setItem("username", newUsername); // <-- Use the new value directly
+
+      navigate("/agent");
     } catch (err: any) {
       setError(err?.message || "Login failed");
     } finally {
@@ -50,16 +135,26 @@ function Authentication() {
 
   const handleSignupSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!phoneVerified) {
+      setError("Please verify your phone number first");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/signup`, {
+      const res = await fetch(`${API_BASE}/api/phone`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupData),
       });
       if (!res.ok) throw new Error(`Signup failed (${res.status})`);
-      // You can handle success (e.g., route to login) here
+      console.log(res);
+      const newUsername = signupData.username; // <-- Use the value from your form data
+
+      setuserName(newUsername);
+      localStorage.setItem("username", newUsername); // <-- Use the new value directly
+
+      navigate("/agent");
     } catch (err: any) {
       setError(err?.message || "Signup failed");
     } finally {
@@ -242,7 +337,7 @@ function Authentication() {
                     <span className="absolute left-3 text-base z-10">📱</span>
                     <input
                       type="tel"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="+91 9999900000"
                       value={resetPhone}
                       onChange={(e) => setResetPhone(e.target.value)}
                       className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
@@ -337,7 +432,10 @@ function Authentication() {
                     ? "bg-white text-green-500 shadow-sm"
                     : "text-gray-600"
                 }`}
-                onClick={() => setIsLogin(true)}
+                onClick={() => {
+                  setIsLogin(true);
+                  resetVerification();
+                }}
               >
                 Login
               </button>
@@ -347,7 +445,10 @@ function Authentication() {
                     ? "bg-white text-green-500 shadow-sm"
                     : "text-gray-600"
                 }`}
-                onClick={() => setIsLogin(false)}
+                onClick={() => {
+                  setIsLogin(false);
+                  resetVerification();
+                }}
               >
                 Create Account
               </button>
@@ -384,52 +485,100 @@ function Authentication() {
                       }
                       className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
                       required
+                      disabled={phoneVerified}
                     />
                   </div>
                 </div>
 
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">🔒</span>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={loginData.password}
-                      onChange={(e) =>
-                        setLoginData({ ...loginData, password: e.target.value })
-                      }
-                      className="w-full py-3 pl-10 pr-12 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
-                    />
+                {!phoneVerified && !otpSent && (
+                  <button
+                    type="button"
+                    onClick={() => sendOtp1(loginData.phone, false)}
+                    disabled={!loginData.phone || verifyingOtp}
+                    className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {verifyingOtp ? "Sending..." : "Send OTP"}
+                  </button>
+                )}
+
+                {otpSent && !phoneVerified && (
+                  <>
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Enter OTP
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-base z-10">
+                          🔢
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Enter 6-digit OTP"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        OTP sent to {loginData.phone}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 mb-6">
+                      <button
+                        type="button"
+                        onClick={() => verifyOtp1(otp)}
+                        disabled={otp.length !== 6 || verifyingOtp}
+                        className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {verifyingOtp ? "Verifying..." : "Verify OTP"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOtpSent(false);
+                          setOtp("");
+                        }}
+                        className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg text-base font-medium hover:bg-gray-300 transition-all duration-200"
+                      >
+                        Resend
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {phoneVerified && (
+                  <>
+                    <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between text-green-700">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">✅</span>
+                          <span className="text-sm font-medium">
+                            Phone verified successfully!
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={resetVerification}
+                          className="text-xs text-green-600 hover:text-green-800 underline"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
-                      className="absolute right-3 text-base cursor-pointer p-1 text-gray-500 hover:text-green-500 transition-colors duration-200"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={handleLoginSubmit}
+                      disabled={submitting}
+                      className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                      {submitting ? "Logging in..." : "Login"}
                     </button>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="text-green-500 text-sm cursor-pointer mb-6 py-0 underline hover:text-green-600 transition-colors duration-200"
-                  onClick={() => setShowForgotPassword(true)}
-                >
-                  Forgot Password?
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleLoginSubmit}
-                  disabled={submitting}
-                  className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Logging in..." : "Login"}
-                </button>
+                  </>
+                )}
 
                 <div className="relative text-center my-6 text-gray-600 text-sm">
                   <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200"></div>
@@ -456,202 +605,280 @@ function Authentication() {
             ) : (
               /* Signup Form */
               <div onSubmit={handleSignupSubmit}>
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Full Name
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">👤</span>
-                    <input
-                      type="text"
-                      placeholder="John Doe"
-                      value={signupData.fullName}
-                      onChange={(e) =>
-                        setSignupData({
-                          ...signupData,
-                          fullName: e.target.value,
-                        })
-                      }
-                      className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Phone Number
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">📱</span>
-                    <input
-                      type="tel"
-                      placeholder="+1 (555) 000-0000"
-                      value={signupData.phone}
-                      onChange={(e) =>
-                        setSignupData({ ...signupData, phone: e.target.value })
-                      }
-                      className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">🔒</span>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a strong password"
-                      value={signupData.password}
-                      onChange={(e) =>
-                        setSignupData({
-                          ...signupData,
-                          password: e.target.value,
-                        })
-                      }
-                      className="w-full py-3 pl-10 pr-12 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 text-base cursor-pointer p-1 text-gray-500 hover:text-green-500 transition-colors duration-200"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? "👁️" : "👁️‍🗨️"}
-                    </button>
-                  </div>
-                  {signupData.password && (
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full transition-all duration-300"
-                          style={{
-                            width: `${(passwordStrength.strength / 3) * 100}%`,
-                            backgroundColor: passwordStrength.color,
-                          }}
-                        ></div>
+                {!phoneVerified ? (
+                  <>
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Phone Number
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-base z-10">
+                          📱
+                        </span>
+                        <input
+                          type="tel"
+                          placeholder="+919999900000"
+                          value={signupData.phone}
+                          onChange={(e) =>
+                            setSignupData({
+                              ...signupData,
+                              phone: e.target.value,
+                            })
+                          }
+                          className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                          required
+                        />
                       </div>
-                      <span
-                        className="text-sm"
-                        style={{ color: passwordStrength.color }}
-                      >
-                        {passwordStrength.text}
-                      </span>
                     </div>
-                  )}
-                </div>
 
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Confirm Password
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">🔒</span>
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      value={signupData.confirmPassword}
-                      onChange={(e) =>
-                        setSignupData({
-                          ...signupData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="w-full py-3 pl-10 pr-12 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
+                    {!otpSent && (
+                      <button
+                        type="button"
+                        onClick={() => sendOtp1(signupData.phone, true)}
+                        disabled={!signupData.phone || verifyingOtp}
+                        className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {verifyingOtp ? "Sending..." : "Verify Phone Number"}
+                      </button>
+                    )}
+
+                    {otpSent && (
+                      <>
+                        <div className="mb-5">
+                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Enter OTP
+                          </label>
+                          <div className="relative flex items-center">
+                            <span className="absolute left-3 text-base z-10">
+                              🔢
+                            </span>
+                            <input
+                              type="text"
+                              placeholder="Enter 6-digit OTP"
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value)}
+                              className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                              maxLength={6}
+                              required
+                            />
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">
+                            OTP sent to {signupData.phone}
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3 mb-6">
+                          <button
+                            type="button"
+                            onClick={() => verifyOtp1(otp)}
+                            disabled={otp.length !== 6 || verifyingOtp}
+                            className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {verifyingOtp ? "Verifying..." : "Verify OTP"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOtpSent(false);
+                              setOtp("");
+                            }}
+                            className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg text-base font-medium hover:bg-gray-300 transition-all duration-200"
+                          >
+                            Resend
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between text-green-700">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">✅</span>
+                          <span className="text-sm font-medium">
+                            Phone verified successfully!
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={resetVerification}
+                          className="text-xs text-green-600 hover:text-green-800 underline"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Full Name
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-base z-10">
+                          👤
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="John Doe"
+                          value={signupData.username}
+                          onChange={(e) =>
+                            setSignupData({
+                              ...signupData,
+                              username: e.target.value,
+                            })
+                          }
+                          className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Password
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-base z-10">
+                          🔒
+                        </span>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a strong password"
+                          value={signupData.password}
+                          onChange={(e) =>
+                            setSignupData({
+                              ...signupData,
+                              password: e.target.value,
+                            })
+                          }
+                          className="w-full py-3 pl-10 pr-12 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 text-base cursor-pointer p-1 text-gray-500 hover:text-green-500 transition-colors duration-200"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? "👁️" : "👁️‍🗨️"}
+                        </button>
+                      </div>
+                      {signupData.password && (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full transition-all duration-300"
+                              style={{
+                                width: `${
+                                  (passwordStrength.strength / 3) * 100
+                                }%`,
+                                backgroundColor: passwordStrength.color,
+                              }}
+                            ></div>
+                          </div>
+                          <span
+                            className="text-sm"
+                            style={{ color: passwordStrength.color }}
+                          >
+                            {passwordStrength.text}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mb-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Confirm Password
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-base z-10">
+                          🔒
+                        </span>
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                          value={signupData.confirmPassword}
+                          onChange={(e) =>
+                            setSignupData({
+                              ...signupData,
+                              confirmPassword: e.target.value,
+                            })
+                          }
+                          className="w-full py-3 pl-10 pr-12 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 text-base cursor-pointer p-1 text-gray-500 hover:text-green-500 transition-colors duration-200"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        >
+                          {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                        </button>
+                      </div>
+                    </div>
+                    <FarmLocationInput
+                      signupData={signupData}
+                      setSignupData={setSignupData}
                     />
+
+                    <div className="mb-6">
+                      <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={signupData.agreeToTerms}
+                          onChange={(e) =>
+                            setSignupData({
+                              ...signupData,
+                              agreeToTerms: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 accent-green-500"
+                          required
+                        />
+                        I agree to the{" "}
+                        <a
+                          href="#"
+                          className="text-green-500 no-underline hover:underline"
+                        >
+                          Terms & Conditions
+                        </a>
+                      </label>
+                    </div>
+
                     <button
                       type="button"
-                      className="absolute right-3 text-base cursor-pointer p-1 text-gray-500 hover:text-green-500 transition-colors duration-200"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={handleSignupSubmit}
+                      disabled={submitting}
+                      className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                      {submitting ? "Creating account..." : "Create Account"}
                     </button>
-                  </div>
-                </div>
 
-                <div className="mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Farm Location
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-base z-10">📍</span>
-                    <input
-                      type="text"
-                      placeholder="e.g., Iowa, USA"
-                      value={signupData.farmLocation}
-                      onChange={(e) =>
-                        setSignupData({
-                          ...signupData,
-                          farmLocation: e.target.value,
-                        })
-                      }
-                      className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
-                      required
-                    />
-                  </div>
-                </div>
+                    <div className="relative text-center my-6 text-gray-600 text-sm">
+                      <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200"></div>
+                      <span className="bg-white px-4">Or continue with</span>
+                    </div>
 
-                <div className="mb-6">
-                  <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={signupData.agreeToTerms}
-                      onChange={(e) =>
-                        setSignupData({
-                          ...signupData,
-                          agreeToTerms: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 accent-green-500"
-                      required
-                    />
-                    I agree to the{" "}
-                    <a
-                      href="#"
-                      className="text-green-500 no-underline hover:underline"
-                    >
-                      Terms & Conditions
-                    </a>
-                  </label>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSignupSubmit}
-                  disabled={submitting}
-                  className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Creating account..." : "Create Account"}
-                </button>
-
-                <div className="relative text-center my-6 text-gray-600 text-sm">
-                  <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200"></div>
-                  <span className="bg-white px-4">Or continue with</span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  <button
-                    type="button"
-                    className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <span className="font-bold text-base">G</span>
-                    Google
-                  </button>
-                  <button
-                    type="button"
-                    className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <span className="text-base">🍎</span>
-                    Apple
-                  </button>
-                </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button
+                        type="button"
+                        className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <span className="font-bold text-base">G</span>
+                        Google
+                      </button>
+                      <button
+                        type="button"
+                        className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        <span className="text-base">🍎</span>
+                        Apple
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
