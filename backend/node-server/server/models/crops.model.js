@@ -12,17 +12,26 @@ const cropSchema = new Schema({
     type: String,
     required: true,
   },
+  variety: {
+    type: String,
+    required: true,
+  },
   scientificName: {
     type: String,
   },
-  description: {
+  description: { // Features of given crop variety
     type: String,
+    require: true
   },
   category: {
     type: String, 
   },
   season: {
     type: String, 
+  },
+  region: {
+    type: Array,
+    default: []
   },
   imageUrl: {
     type: String, 

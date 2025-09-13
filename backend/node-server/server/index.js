@@ -11,6 +11,10 @@ import firebaseInit from './config/firebaseInit.js';
 
 import aiRoutes from './routes/ai.route.js';
 import authRoutes from './routes/auth.route.js';
+import cropRoutes from './routes/crop.route.js';
+import alertRoutes from './routes/alert.route.js';
+// import precautionRoutes from './routes/precaution.route.js';
+// import newsRoutes from './routes/news.route.js';
 
 dotenv.config();
 connectDB();
@@ -36,6 +40,10 @@ const PORT = process.env.PORT || 10000;
 
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api', authRoutes);
+app.use('/api/v1/crop', cropRoutes);
+app.use('/api/v1/alert', alertRoutes);
+// app.use('/api/v1/news', newsRoutes);
+// app.use('/api/v1/precautions', precautionRoutes);
 
 app.use((err, req, res, next) => {
 	console.error('Server error:', err);
