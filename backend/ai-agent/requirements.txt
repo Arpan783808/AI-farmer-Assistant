@@ -13,3 +13,7 @@ Flask
 pymongo
 cryptography
 Flask-Cors
+langchain-google-genai
+python-dotenv
+gtts
+openai
