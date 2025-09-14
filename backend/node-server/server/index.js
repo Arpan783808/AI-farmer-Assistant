@@ -13,6 +13,7 @@ import aiRoutes from './routes/ai.route.js';
 import authRoutes from './routes/auth.route.js';
 import cropRoutes from './routes/crop.route.js';
 import alertRoutes from './routes/alert.route.js';
+import chatRoutes from './routes/chat.route.js';
 // import precautionRoutes from './routes/precaution.route.js';
 // import newsRoutes from './routes/news.route.js';
 
@@ -42,6 +43,7 @@ app.use('/api/v1/ai', aiRoutes);
 app.use('/api', authRoutes);
 app.use('/api/v1/crop', cropRoutes);
 app.use('/api/v1/alert', alertRoutes);
+app.use('/api/chat', chatRoutes);
 // app.use('/api/v1/news', newsRoutes);
 // app.use('/api/v1/precautions', precautionRoutes);
 
