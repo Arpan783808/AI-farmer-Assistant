@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-
+import useDocumentTitle from "@/hooks/UseDocumentTitle";
 import farmingHero from "../../public/placeholder.svg";
 
 // Types
@@ -57,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onChatSelect,
   onNewChat,
 }) => {
+  useDocumentTitle('Chat - AIChatApp');
   return (
     <>
       {/* Overlay for mobile */}
@@ -913,7 +914,9 @@ const Agent: React.FC = () => {
 
         const response = await fetch("http://localhost:10000/api/v1/ai/chat", {
           method: "POST",
+          // headers: { "Content-Type": "application/json" },
           body: formData,
+          credentials: "include"
         });
 
         console.log("📡 API Response status:", response.status);

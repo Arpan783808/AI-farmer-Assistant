@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { sendOtp, verifyOtp } from "../lib/auth_utils";
 import { useNavigate } from "react-router-dom";
 import { FarmLocationInput } from "./location";
+import useDocumentTitle from "../hooks/UseDocumentTitle";
 function Authentication() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -24,7 +25,7 @@ function Authentication() {
   const [loginData, setLoginData] = useState({
     phone: "",
   });
-
+  useDocumentTitle('GetStarted - AIChatApp');
   const [signupData, setSignupData] = useState({
     username: "",
     phone: "",
@@ -52,6 +53,7 @@ function Authentication() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone }),
+          credentials: "include",
         });
         if (!res.ok) {
           const errorData = await res.json();
@@ -110,6 +112,7 @@ function Authentication() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken, username: "Tester", login: true }),
+        credentials: "include",
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -117,13 +120,12 @@ function Authentication() {
       }
 
       const data = await res.json();
-
       // 1. Store the new username in a constant
       const newUsername = data.user.username;
 
       // 2. Use the new constant for both operations
       setuserName(newUsername);
-      localStorage.setItem("username", newUsername); // <-- Use the new value directly
+      localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
 
       navigate("/agent");
     } catch (err: any) {
@@ -146,13 +148,15 @@ function Authentication() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(signupData),
+        credentials: "include",
       });
       if (!res.ok) throw new Error(`Signup failed (${res.status})`);
       console.log(res);
       const newUsername = signupData.username; // <-- Use the value from your form data
-
+      const data = await res.json();
+      
       setuserName(newUsername);
-      localStorage.setItem("username", newUsername); // <-- Use the new value directly
+      localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
 
       navigate("/agent");
     } catch (err: any) {

@@ -52,6 +52,7 @@ export const signin = async (req, res) => {
           coordinates: [longitude, latitude],
         },
       });
+      await admin.auth().setCustomUserClaims(uid, { role: user.role });
     } else {
       if (!login) {
         return res.status(404).json({ message: "user already exisits" });
@@ -62,6 +63,7 @@ export const signin = async (req, res) => {
         await user.save();
         console.log(9);
       }
+      await admin.auth().setCustomUserClaims(uid, { role: user.role });
     }
     const expiresIn = 5 * 24 * 60 * 60 * 1000;
     const sessionCookie = await admin
@@ -70,8 +72,8 @@ export const signin = async (req, res) => {
     res.cookie("session", sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,
-      secure: false,
-      sameSite: "None",
+      // secure: false,
+      // sameSite: "None",
     });
     const publicUser = {
       id: user._id,
@@ -80,6 +82,7 @@ export const signin = async (req, res) => {
       profilePicture: user.profilePicture,
       isPhoneVerified: user.isPhoneVerified,
       farmAddress: user.farmAddress,
+      role: user.role
     };
     res.json({
       token: sessionCookie,
@@ -185,10 +188,15 @@ export const checkPhone = async (req, res) => {
 };
 export const logout = async (req, res) => {
   const sessionCookie = req.cookies.session || "";
-  try {
+  try {    
     const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
     await admin.auth().revokeRefreshTokens(decoded.uid);
-  } catch (e) {}
-  res.clearCookie("session");
-  res.json({ ok: true });
+  } catch (err) {
+    console.log(err.message);
+    res.json({success: false, message: err.message});
+  } finally {    
+    res.clearCookie("session");
+    res.json({ ok: true });
+  }
+  
 };

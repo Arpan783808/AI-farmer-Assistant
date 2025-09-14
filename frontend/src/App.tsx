@@ -3,9 +3,13 @@ import { Navigation } from "./components/Navigation";
 import { HeroSection } from "./components/HeroSection";
 import Authentication from "./components/Authentication.tsx";
 import Agent from "./components/Agent.tsx";
+import NotFound from "./components/NotFound.tsx";
 import { useEffect, useState, useRef } from "react";
 import { auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import PrivateRoute from "./components/PrivateRoute.tsx";
+import AdminOnlyPrivateRoute from "./components/AdminRoute.tsx";
+import PublicRoute from "./components/PublicRoute.tsx";
 
 interface UserProfileProps {
   username: string;
@@ -71,8 +75,22 @@ function App() {
             </>
           }
         />
-        <Route path="/agent" element={<Agent />} />;
-        <Route path="/login" element={<Authentication />} />
+
+        <Route element={<PrivateRoute/>}>
+            {/* list protected routes, that must be available for loggedin user only  */}
+            <Route path="/agent" element={<Agent />} />;
+        </Route>
+
+        <Route element={<AdminOnlyPrivateRoute/>}>
+            {/* list routes only for admins */}
+            { /* <Route path="/agent" element={<AdminDashboard />} />; */}
+        </Route>
+
+        <Route element={<PublicRoute/>}>
+            {/* routes that must be available for logged out user */}
+            <Route path="/login" element={<Authentication />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

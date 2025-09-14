@@ -5,7 +5,8 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 
 export const Navigation = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  const API_BASE =
+    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
@@ -16,9 +17,14 @@ export const Navigation = () => {
 
   const handleLogout = async () => {
     try {
+      const logoutResponse = await fetch(`${API_BASE}/api/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", 
+      });
       await signOut(auth);
       setIsLoggedIn(false);
-      localStorage.removeItem("username");
+      localStorage.removeItem("currentUser");
     } catch (error) {
       console.error("Error signing out:", error);
     }
