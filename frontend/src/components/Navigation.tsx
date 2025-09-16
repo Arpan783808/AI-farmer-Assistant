@@ -25,6 +25,7 @@ export const Navigation = () => {
       await signOut(auth);
       setIsLoggedIn(false);
       localStorage.removeItem("currentUser");
+      localStorage.removeItem("userName");
     } catch (error) {
       console.error("Error signing out:", error);
     }

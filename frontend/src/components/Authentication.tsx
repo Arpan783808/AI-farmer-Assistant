@@ -122,11 +122,11 @@ function Authentication() {
       const data = await res.json();
       // 1. Store the new username in a constant
       const newUsername = data.user.username;
-
+      console.log(newUsername);
       // 2. Use the new constant for both operations
       setuserName(newUsername);
       localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
-
+      localStorage.setItem("username",newUsername);
       navigate("/agent");
     } catch (err: any) {
       setError(err?.message || "Login failed");
@@ -563,13 +563,13 @@ function Authentication() {
                             Phone verified successfully!
                           </span>
                         </div>
-                        <button
+                        {/* <button
                           type="button"
                           onClick={resetVerification}
                           className="text-xs text-green-600 hover:text-green-800 underline"
                         >
                           Change
-                        </button>
+                        </button> */}
                       </div>
                     </div>
 
@@ -704,13 +704,13 @@ function Authentication() {
                             Phone verified successfully!
                           </span>
                         </div>
-                        <button
+                        {/* <button
                           type="button"
                           onClick={resetVerification}
                           className="text-xs text-green-600 hover:text-green-800 underline"
                         >
                           Change
-                        </button>
+                        </button> */}
                       </div>
                     </div>
 
