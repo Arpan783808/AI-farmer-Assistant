@@ -8,6 +8,15 @@ import io
 import tempfile
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+script_dir = Path(__file__).resolve().parent
+env_path = script_dir / '.env'
+load_dotenv(dotenv_path=env_path)
+
+
+
+
+load_dotenv()
 
 def main():
     parser = argparse.ArgumentParser(description='AI Farming Assistant Bridge')
@@ -96,17 +105,35 @@ def main():
                 has_image=has_image_input, 
                 has_audio=has_audio_input
             )
-            print(f"🤖 Generated response: '{ai_response.response[:50]}...'", file=sys.stderr)
-            print(f"🤖 Generated title: '{ai_response.title}...'", file=sys.stderr)
+            response_text = ""
+            title_text = ""
+            if hasattr(ai_response, 'response'):
+                response_text = str(ai_response.response)
+            if hasattr(ai_response, 'title'):
+                title_text = str(ai_response.title)
+
+            if not response_text:
+                if isinstance(ai_response, str):
+                    response_text = ai_response
+                elif isinstance(ai_response, dict):
+                    response_text = str(ai_response.get('response', ''))
+                    title_text = str(ai_response.get('title', ''))
+                else:
+                    response_text = str(ai_response)
+            
+            preview = response_text[:50] + "..." if len(response_text) > 50 else response_text
+            print(f"🤖 LLM response: '{preview}'", file=sys.stderr)
             
         except Exception as e:
             print(f"LLM error: {e}", file=sys.stderr)
-            ai_response = get_fallback_response(user_message)
+            response_text = get_fallback_response(user_message)  
+            title_text = "Farming Help"
+            print(f"Fallback response: '{response_text[:50]}...'", file=sys.stderr)
         
      
         audio_base64 = None
         try:
-            audio_base64 = text_to_speech(ai_response.response)
+            audio_base64 = text_to_speech(response_text)
             if audio_base64:
                 print(f"🎵 Generated TTS audio: {len(audio_base64)} chars", file=sys.stderr)
         except Exception as e:
@@ -116,8 +143,8 @@ def main():
         result = {
             "success": True,
             "transcribed_text": user_message if has_audio_input else None,
-            "response_text": ai_response.response,
-            "title":ai_response.title,
+            "title": title_text,
+            "response_text": response_text,
             "audio_base64": audio_base64,
             "input_types": {
                 "audio": has_audio_input,
@@ -138,8 +165,23 @@ def main():
 def speech_to_text(audio_data):
   
     try:
-        import openai
+        try:
+            import openai
+        except ImportError:
+            print("OpenAI not installed. Install with: pip install openai", file=sys.stderr)
+            return None
         
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print("OPENAI_API_KEY not found in environment variables", file=sys.stderr)
+            return None
+        openai.api_key = api_key
+
+        try:
+            client = openai.OpenAI(api_key=api_key)
+        except AttributeError:
+            # Fallback for older OpenAI versions
+            client = None
         # Save audio data to temporary file
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_file:
             temp_file.write(audio_data)
@@ -147,15 +189,57 @@ def speech_to_text(audio_data):
         
         try:
            
-            with open(temp_file_path, 'rb') as audio_file:
-                transcript = openai.Audio.transcribe(
-                    "whisper-1",
-                    audio_file,
-                    language=None,  
-                    temperature=0,  
-                    prompt="This is a farming conversation in Malayalam, Hindi, or English about agriculture, crops, soil, fertilizers, or pest control."
-                )
-            return transcript.text.strip()
+           with open(temp_file_path, 'rb') as audio_file:
+                if client:  # New API version
+                    transcript = client.audio.transcriptions.create(
+                        model="whisper-1",
+                        file=audio_file,
+                        temperature=0,
+                        prompt="This is a farming conversation in Malayalam, Hindi, or English about agriculture, crops, soil, fertilizers, or pest control."
+                    )
+                    return transcript.text.strip()
+                else:  # Old API version or SDK missing helper
+                    # Prefer SDK method if available, otherwise call the REST endpoint directly, do not change it!
+                    prompt_text = "This is a farming conversation in Malayalam, Hindi, or English about agriculture, crops, soil, fertilizers, or pest control."
+                    # Use getattr to safely retrieve the Audio attribute to avoid static analysis errors, better in this case!, do not use openai.Audio, will give errors!
+                    audio_module = getattr(openai, "Audio", None)
+                    if audio_module and hasattr(audio_module, "transcribe"):
+                        transcribe_fn = getattr(audio_module, "transcribe")
+                        transcript = transcribe_fn(
+                            "whisper-1",
+                            audio_file,
+                            temperature=0,
+                            prompt=prompt_text
+                        )
+                        # Some SDKs return an object with .text, some return a dict
+                        if hasattr(transcript, "text"):
+                            return transcript.text.strip()
+                        elif isinstance(transcript, dict) and "text" in transcript:
+                            return transcript["text"].strip()
+                        else:
+                            return str(transcript).strip()
+                    else:
+                        # Fallback: call the HTTP API directly (works regardless of installed SDK)
+                        try:
+                            import requests
+                        except ImportError:
+                            raise Exception("requests not installed; install with: pip install requests")
+                        audio_file.seek(0)
+                        headers = {
+                            "Authorization": f"Bearer {api_key}"
+                        }
+                        files = {
+                            "file": ("audio.webm", audio_file, "application/octet-stream")
+                        }
+                        data = {
+                            "model": "whisper-1",
+                            "temperature": 0,
+                            "prompt": prompt_text
+                        }
+                        resp = requests.post("https://api.openai.com/v1/audio/transcriptions", headers=headers, files=files, data=data)
+                        resp.raise_for_status()
+                        j = resp.json()
+                        return j.get("text", "").strip()
         finally:
           
             if os.path.exists(temp_file_path):
@@ -165,7 +249,56 @@ def speech_to_text(audio_data):
         print("OpenAI not installed. Install with: pip install openai", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"Whisper API error: {e}", file=sys.stderr)
+        print(f"OpenAI Whisper failed: {e}, trying local Whisper...", file=sys.stderr)
+        try:
+            import whisper
+            
+            # Save audio to temp file
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file.write(audio_data)
+                temp_file_path = temp_file.name
+            
+            try:
+                # Load model (downloads on first use)
+                model = whisper.load_model("base")
+                result = model.transcribe(temp_file_path, language="ml")
+                # Normalize different possible return formats into a single string.
+                text_val = ""
+                if isinstance(result, dict):
+                    if "text" in result:
+                        text_field = result["text"]
+                        if isinstance(text_field, list):
+                            # Join list parts into a single string
+                            text_val = " ".join(part if isinstance(part, str) else str(part) for part in text_field)
+                        elif isinstance(text_field, str):
+                            text_val = text_field
+                        else:
+                            text_val = str(text_field)
+                    elif "segments" in result and isinstance(result["segments"], list):
+                        # Some transcribers return segments with text fields
+                        parts = []
+                        for seg in result["segments"]:
+                            t = seg.get("text", "")
+                            if isinstance(t, str):
+                                parts.append(t)
+                            else:
+                                parts.append(str(t))
+                        text_val = " ".join(parts)
+                    else:
+                        text_val = str(result)
+                else:
+                    # Fallback when result is not a dict
+                    text_val = str(result)
+                return text_val.strip()
+            finally:
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+        except ImportError:
+                print("Local Whisper not available. Install with: pip install openai-whisper", file=sys.stderr)
+                return None
+        except Exception as e:
+            print(f"Local Whisper error: {e}", file=sys.stderr)
+            return None
         return None
     
 def clean_markdown_for_tts(text):

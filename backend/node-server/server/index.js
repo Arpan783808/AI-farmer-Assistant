@@ -10,10 +10,10 @@ import mongoose from 'mongoose';
 import firebaseInit from './config/firebaseInit.js';
 
 import aiRoutes from './routes/ai.route.js';
-import authRoutes from './routes/auth.route.js';
-import cropRoutes from './routes/crop.route.js';
 import alertRoutes from './routes/alert.route.js';
+import authRoutes from './routes/auth.route.js';
 import chatRoutes from './routes/chat.route.js';
+import cropRoutes from './routes/crop.route.js';
 import userRoutes from './routes/user.route.js';
 // import precautionRoutes from './routes/precaution.route.js';
 // import newsRoutes from './routes/news.route.js';
@@ -25,6 +25,8 @@ const corsOptions = {
 	origin: [
 		process.env.CORS_ORIGIN || 'http://localhost:5173',
 		'http://localhost:5174',
+		'http://localhost:3000',
+		'http://localhost:10000',
 	],
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 	credentials: true,
@@ -34,8 +36,17 @@ const corsOptions = {
 const app = express();
 app.use(cors(corsOptions));
 app.use(express.static('public'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+	express.json({
+		limit: '10mb', // Increaing from default 100kb to 10mb, it will give errors as we are using TTS
+	})
+);
+app.use(
+	express.urlencoded({
+		limit: '10mb',
+		extended: true,
+	})
+); //this is old syntax, well i'm not removing it, just in case if something breaks
 app.use(cookieParser());
 
 const PORT = process.env.PORT || 10000;

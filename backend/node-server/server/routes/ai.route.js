@@ -28,7 +28,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 router.post(
-	'/chat', verifySession,
+	'/chat',
+	verifySession,
 	upload.fields([
 		{ name: 'audio_file', maxCount: 1 },
 		{ name: 'image_file', maxCount: 1 },
