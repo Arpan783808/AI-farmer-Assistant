@@ -1,8 +1,22 @@
 import Alert from '../models/alert.model.js';
 import User from '../models/user.model.js';
 import { sendSMS } from '../services/smsService.js';
-import { sendWhatsApp } from '../services/whatsappService.js';
+// import { sendWhatsApp } from '../services/whatsappService.js';
 import { sendTelegram } from '../services/telegramService.js';
+
+const validateCoordinates = (coordinates) => {
+  const [lng, lat] = coordinates;
+  if (typeof lng !== 'number' || typeof lat !== 'number') {
+    return 'Coordinates must be numbers';
+  }
+  if (lng < -180 || lng > 180) {
+    return 'Longitude must be between -180 and 180 degrees';
+  }
+  if (lat < -90 || lat > 90) {
+    return 'Latitude must be between -90 and 90 degrees';
+  }
+  return null;
+};
 
 export const createAlert = async (req, res) => {
     try {
@@ -140,6 +154,59 @@ export const deleteAlert = async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+};
+
+
+export const updateAlert = async (req, res) => {
+  try {
+    const alertId = req.params.id;
+    const updateData = req.body;
+
+    if (!updateData.title || !updateData.content || !updateData.range || !updateData.location?.coordinates) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+      });
+    }
+
+    if (updateData.location?.coordinates) {
+      const coordError = validateCoordinates(updateData.location.coordinates);
+      if (coordError) {
+        return res.status(400).json({
+          success: false,
+          error: coordError,
+        });
+      }
+    }
+
+    if (!updateData.expiresAt) {
+      updateData.expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+    }
+
+    const updatedAlert = await Alert.findByIdAndUpdate(
+      alertId,
+      { ...updateData, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAlert) {
+      return res.status(404).json({
+        success: false,
+        error: 'Alert not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedAlert,
+      message: 'Alert updated successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 };

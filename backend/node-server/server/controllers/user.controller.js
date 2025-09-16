@@ -2,7 +2,7 @@ import User from '../models/user.model.js';
 
 export const updateUser = async (req, res) => {
   try {
-    if (req.user.id !== req.params.userId && req.user.role !== 'admin') {
+    if (req.user._id.toString() !== req.params.userId ) {
       return res.status(403).json({success: false, message: "unauthorized access"});
     }
 
@@ -37,7 +37,7 @@ export const updateUser = async (req, res) => {
     }
 
     const { password, ...userData } = updatedUser._doc;
-    res.status(200).json(userData);
+    res.status(200).json({success:true, data:userData});
   } catch (error) {
     console.log(error.message);
     res.status(401).json({success: false, message: error.message});
@@ -72,7 +72,7 @@ export const getUser = async (req, res) => {
     }
 
     const { password, ...userData } = user._doc;
-    res.status(200).json(userData);
+    res.status(200).json({success:true, data:userData});
   } catch (error) {
     console.log(error.message);
     res.status(401).json({success: false, message: error.message});

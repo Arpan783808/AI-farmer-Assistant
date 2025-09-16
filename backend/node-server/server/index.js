@@ -54,7 +54,7 @@ const PORT = process.env.PORT || 10000;
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api', authRoutes);
 app.use('/api/v1/crop', cropRoutes);
-app.use('/api/v1/alert', alertRoutes);
+app.use('/api/alerts', alertRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/user', userRoutes);
 // app.use('/api/v1/news', newsRoutes);

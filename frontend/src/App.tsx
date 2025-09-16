@@ -1,28 +1,28 @@
-import { Routes, Route } from "react-router-dom";
-import { Navigation } from "./components/Navigation";
-import { HeroSection } from "./components/HeroSection";
-import Authentication from "./components/Authentication.tsx";
-import Agent from "./components/Agent.tsx";
-import NotFound from "./components/NotFound.tsx";
-import { useEffect, useState, useRef } from "react";
-import { auth } from "./firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import PrivateRoute from "./components/PrivateRoute.tsx";
-import AdminOnlyPrivateRoute from "./components/AdminRoute.tsx";
-import PublicRoute from "./components/PublicRoute.tsx";
+import React, { useEffect, useState, useRef } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Navigation } from './components/Navigation';
+import { HeroSection } from './components/HeroSection';
+import Authentication from './components/Authentication.tsx';
+import Agent from './components/Agent.tsx';
+import NotFound from './components/NotFound.tsx';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import PrivateRoute from './components/PrivateRoute.tsx';
+import AdminOnlyPrivateRoute from './components/AdminRoute.tsx';
+import PublicRoute from './components/PublicRoute.tsx';
+// import Dashboard from './components/Alert.tsx';
+import Dashboard from './pages/Dashboard.tsx';
 
 interface UserProfileProps {
   username: string;
 }
 
-const UserProfile = ({ username }: UserProfileProps) => {
+const UserProfile: React.FC<UserProfileProps> = ({ username }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
-        className="flex items-center space-x-3 bg-white hover:bg-gray-100 rounded-md py-2 px-3 shadow-md transition-all duration-200 ease-in-out"
-      >
+      <button className="flex items-center space-x-3 bg-white hover:bg-gray-100 rounded-md py-2 px-3 shadow-md transition-all duration-200 ease-in-out">
         <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -37,21 +37,19 @@ const UserProfile = ({ username }: UserProfileProps) => {
             />
           </svg>
         </div>
-        <span className="text-gray-700 font-medium hidden sm:block">
-          {username}
-        </span>
+        <span className="text-gray-700 font-medium hidden sm:block">{username}</span>
       </button>
-
     </div>
   );
 };
 
 function App() {
-  const [username, setUsername] = useState("User");
+  const [username, setUsername] = useState('User');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUsername(localStorage.getItem("username") || "User");
+      setUsername(localStorage.getItem('username') || 'User');
       setIsLoggedIn(!!user);
     });
 
@@ -66,8 +64,8 @@ function App() {
           element={
             <>
               {isLoggedIn && (
-                <div className="absolute top-8 right-4 z-10">
-                  <UserProfile username={username} />
+                <div className="absolute top-8 right-4 z-10" onClick={()=>navigate('/dashboard')}>
+                  <UserProfile username={username}  />
                 </div>
               )}
               <Navigation />
@@ -75,20 +73,18 @@ function App() {
             </>
           }
         />
-
-        <Route element={<PrivateRoute/>}>
-            {/* list protected routes, that must be available for loggedin user only  */}
-            <Route path="/agent" element={<Agent />} />;
+        <Route element={<PrivateRoute />}>
+          <Route path="/agent" element={<Agent />} />
+          {/* <Route path="/alert/*" element={<Dashboard />} /> */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          
         </Route>
-
-        <Route element={<AdminOnlyPrivateRoute/>}>
-            {/* list routes only for admins */}
-            { /* <Route path="/agent" element={<AdminDashboard />} />; */}
+        <Route element={<AdminOnlyPrivateRoute />}>
+          {/* list routes only for admins */}
+          {/* <Route path="/admin" element={<AdminDashboard />} /> */}
         </Route>
-
-        <Route element={<PublicRoute/>}>
-            {/* routes that must be available for logged out user */}
-            <Route path="/login" element={<Authentication />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/login" element={<Authentication />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -97,4 +93,3 @@ function App() {
 }
 
 export default App;
-
