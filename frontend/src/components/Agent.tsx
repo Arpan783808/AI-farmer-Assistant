@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onChatSelect,
   onNewChat,
 }) => {
-  useDocumentTitle('Chat - AIChatApp');
+  useDocumentTitle("Chat - AIChatApp");
   return (
     <>
       {/* Overlay for mobile */}
@@ -101,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={onNewChat}
               className="btn btn-secondary btn-icon"
-              title="New Chat"
+              title="New Conversation"
             >
               {/* <Plus className="h-4 w-4" /> */}
             </button>
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={onNewChat}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
-              title="New Chat"
+              title="New Conversation"
             >
               <MessageCircle className="w-5 h-5" />
             </button>
@@ -687,22 +687,50 @@ const Agent: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   //(TODO) fetch history from backend and set in chats
-  const [chats, setChats] = useState<Chat[]>([
-    {
-      id: "1",
-      title: "Soil Analysis: North Field",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-      messages: [],
-    },
-    {
-      id: "2",
-      title: "Pest Identification on Corn",
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      messages: [],
-    },
-  ]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  useEffect(() => {
+    // We define an async function inside the effect to use await.
+    const fetchChats = async () => {
+      // 1. Set loading state to provide immediate UI feedback.
+      setIsLoading(true);
 
-  const [activeChat, setActiveChat] = useState<string | null>(null);
+      try {
+        // 2. Make the API call with credentials to send the session cookie.
+        const response = await fetch(
+          "http://localhost:10000/api/chat/getAllChats",
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include", // CRITICAL: This sends your 'session' cookie.
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch chats.");
+        }
+
+        const data = await response.json();
+
+        // 3. Data Mapping: Transform the backend data structure to the frontend's expected shape.
+        const formattedChats: Chat[] = data.chats.map((chat: any) => ({
+          id: chat.chatId,
+          title: chat.title,
+          timestamp: new Date(chat.updatedAt),
+          messages: [],
+        }));
+        setChats(formattedChats);
+      } catch (err: any) {
+        console.error("Error fetching chat list:", err);
+      } finally {
+        // 5. Always turn off the loading state, whether the call succeeds or fails.
+        setIsLoading(false);
+      }
+    };
+
+    fetchChats();
+  }, []);
+  const [activeChat, setActiveChat] = useState<string | null>(null); //stores chatId of the active chat
   const [isLoading, setIsLoading] = useState(false);
 
   // NEW: Voice Recognition States
@@ -712,7 +740,54 @@ const Agent: React.FC = () => {
   );
 
   const currentChat = chats.find((chat) => chat.id === activeChat);
+  useEffect(() => {
+    const fetchChatDetails = async (chatId: string) => {
+      // Check if we already have messages for this chat to avoid redundant fetches
+      const currentChatData = chats.find((c) => c.id === chatId);
+      if (currentChatData && currentChatData.messages.length > 0) {
+        console.log("Messages already loaded for this chat.");
+        return;
+      }
 
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `http://localhost:10000/api/chat/get/${chatId}`,
+          {
+            credentials: "include",
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch chat details.");
+
+        const data = await response.json();
+
+        // Data mapping for messages can be done here if needed
+        const fetchedMessages: Message[] = data.chat.messages.map(
+          (msg: any) => ({
+            id: msg._id || Date.now().toString(), // Use a proper ID
+            type: msg.role === "user" ? "user" : "ai",
+            content: msg.content,
+            timestamp: new Date(msg.createdAt),
+          })
+        );
+
+        // Update the specific chat in our main chats array with its full message history
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.id === chatId ? { ...chat, messages: fetchedMessages } : chat
+          )
+        );
+      } catch (err: any) {
+        console.error(`Error fetching details for chat ${chatId}:`, err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (activeChat) {
+      fetchChatDetails(activeChat);
+    }
+  }, [activeChat]);
   const stopVoiceRecognition = useCallback(() => {
     if (recognition) {
       recognition.stop();
@@ -732,70 +807,6 @@ const Agent: React.FC = () => {
     }
   }, []);
 
-  //(TODO) generate chat title from backend using LLM
-  const generateChatTitle = (message: string): string => {
-    // Simple title generation based on keywords
-    const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes("soil") || lowerMessage.includes("sample")) {
-      return "Soil Analysis Discussion";
-    } else if (
-      lowerMessage.includes("pest") ||
-      lowerMessage.includes("bug") ||
-      lowerMessage.includes("disease")
-    ) {
-      return "Pest/Disease Identification";
-    } else if (
-      lowerMessage.includes("weather") ||
-      lowerMessage.includes("forecast")
-    ) {
-      return "Weather Inquiry";
-    } else if (
-      lowerMessage.includes("email") ||
-      lowerMessage.includes("letter") ||
-      lowerMessage.includes("draft")
-    ) {
-      return "Communication Assistance";
-    } else if (
-      lowerMessage.includes("crop") ||
-      lowerMessage.includes("plant")
-    ) {
-      return "Crop Management";
-    } else {
-      return "Farm Consultation";
-    }
-  };
-
-  //(TODO) generate AI response from backend using LLM
-  const generateAIResponse = (
-    userMessage: string,
-    hasImage: boolean,
-    hasAudio: boolean
-  ): string => {
-    // Simulate AI responses based on input type
-    if (hasImage) {
-      return "I can see the image you've uploaded. Let me analyze it for you.\n\n**Analysis:**\n- The image appears to show agricultural content\n- I can help identify potential issues or provide recommendations\n- For more detailed analysis, please describe what specific concerns you have\n\n*Would you like me to focus on any particular aspect of what I'm seeing?*";
-    }
-
-    if (hasAudio) {
-      return "I've received your voice message. Based on what you've shared:\n\n**Key Points:**\n- I understand your farming concern\n- Let me provide some initial guidance\n- Voice input allows for more natural communication\n\n*Feel free to continue our conversation in whatever format is most convenient for you.*";
-    }
-
-    const lowerMessage = userMessage.toLowerCase();
-    if (lowerMessage.includes("soil")) {
-      return "**Soil Analysis Guidance**\n\nFor proper soil analysis, I recommend:\n\n1. **Sampling Method**: Collect samples from multiple locations\n2. **Testing Parameters**: pH, nutrients, organic matter\n3. **Seasonal Timing**: Best done before planting season\n\n*What specific soil concerns are you experiencing?*";
-    }
-
-    if (lowerMessage.includes("weather")) {
-      return "**Weather Information**\n\nI'd be happy to help with weather-related farming decisions. However, I'll need your specific location to provide accurate forecasts.\n\n**Planning Considerations:**\n- Planting schedules\n- Irrigation needs\n- Harvest timing\n- Pest management\n\n*Could you share your farm's location or region?*";
-    }
-
-    if (lowerMessage.includes("pest") || lowerMessage.includes("disease")) {
-      return "**Pest & Disease Management**\n\nFor effective identification and treatment:\n\n1. **Visual Inspection**: Upload clear photos of affected areas\n2. **Symptom Description**: Leaf discoloration, growth patterns, etc.\n3. **Environmental Factors**: Recent weather, watering, fertilization\n\n**Common Signs to Look For:**\n- Leaf damage patterns\n- Unusual growth\n- Insect presence\n\n*Please share images or describe the symptoms you're observing.*";
-    }
-
-    return "Thank you for reaching out! I'm here to help with all your farming needs.\n\n**I can assist with:**\n- Crop management and planning\n- Soil health and testing\n- Pest and disease identification\n- Weather-based recommendations\n- Equipment and technique advice\n\n*What specific farming challenge can I help you with today?*";
-  };
-
   const handleNewChat = useCallback(() => {
     setActiveChat(null);
     setSidebarOpen(false);
@@ -811,7 +822,7 @@ const Agent: React.FC = () => {
     const newChatId = Date.now().toString();
     const newChat: Chat = {
       id: newChatId,
-      title: generateChatTitle(suggestion),
+      title: "New Conversation",
       timestamp: new Date(),
       messages: [],
     };
@@ -840,7 +851,7 @@ const Agent: React.FC = () => {
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           type: "ai",
-          content: generateAIResponse(suggestion, false, false),
+          content: "bla bla bla",
           timestamp: new Date(),
         };
 
@@ -851,7 +862,6 @@ const Agent: React.FC = () => {
               : chat
           )
         );
-
         setIsLoading(false);
       }, 1500);
     }, 100);
@@ -868,7 +878,7 @@ const Agent: React.FC = () => {
         chatId = Date.now().toString();
         const newChat: Chat = {
           id: chatId,
-          title: generateChatTitle(content.text || "New Conversation"),
+          title: "New Conversation",
           timestamp: new Date(),
           messages: [],
         };
@@ -916,7 +926,7 @@ const Agent: React.FC = () => {
           method: "POST",
           // headers: { "Content-Type": "application/json" },
           body: formData,
-          credentials: "include"
+          credentials: "include",
         });
 
         console.log("📡 API Response status:", response.status);
@@ -955,6 +965,40 @@ const Agent: React.FC = () => {
               playAudioResponse(result.audio_base64);
             }, 500);
           }
+          console.log(result.title);
+          let newTitle = currentChat?.title;
+          console.log(newTitle);
+          if (
+            currentChat?.title === "New Conversation" ||
+            currentChat?.title === "New Chat"
+          ) {
+            newTitle = result.title;
+          }
+          console.log(newTitle);
+          // update chat state in the backend
+          const updatePayload = {
+            title: newTitle,
+            chatId: activeChat,
+            usercontent: userMessage.content,
+            aicontent: aiResponse.content,
+            images: content.image ? [content.image.name] : [],
+            audio: content.audio ? ["user_audio.webm"] : [],
+            aiaudio: aiResponse.audio,
+          };
+
+          fetch("http://localhost:10000/api/chat/sendMessage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatePayload),
+            credentials: "include", // Ensures cookies (like session) are sent
+          })
+            .then((res) => res.json())
+            .then((data) =>
+              console.log("✅ Chat history saved:", data.chat.chatId)
+            )
+            .catch((err) =>
+              console.error("🔥 Failed to save chat history:", err)
+            );
         } else {
           throw new Error(result.error || "API call failed");
         }
@@ -1058,7 +1102,7 @@ const Agent: React.FC = () => {
         onNewChat={handleNewChat}
       />
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className="flex-1 flex flex-col lg:ml-0 mt-10">
         <div className="pt-16 lg:pt-0 flex-1 flex flex-col">
           {/* Chat Area */}
           {activeChat && currentChat ? (

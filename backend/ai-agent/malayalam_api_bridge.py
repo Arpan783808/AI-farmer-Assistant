@@ -96,7 +96,8 @@ def main():
                 has_image=has_image_input, 
                 has_audio=has_audio_input
             )
-            print(f"🤖 Generated response: '{ai_response[:50]}...'", file=sys.stderr)
+            print(f"🤖 Generated response: '{ai_response.response[:50]}...'", file=sys.stderr)
+            print(f"🤖 Generated title: '{ai_response.title}...'", file=sys.stderr)
             
         except Exception as e:
             print(f"LLM error: {e}", file=sys.stderr)
@@ -105,7 +106,7 @@ def main():
      
         audio_base64 = None
         try:
-            audio_base64 = text_to_speech(ai_response)
+            audio_base64 = text_to_speech(ai_response.response)
             if audio_base64:
                 print(f"🎵 Generated TTS audio: {len(audio_base64)} chars", file=sys.stderr)
         except Exception as e:
@@ -115,7 +116,8 @@ def main():
         result = {
             "success": True,
             "transcribed_text": user_message if has_audio_input else None,
-            "response_text": ai_response,
+            "response_text": ai_response.response,
+            "title":ai_response.title,
             "audio_base64": audio_base64,
             "input_types": {
                 "audio": has_audio_input,
