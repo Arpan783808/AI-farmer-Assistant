@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+ 
 import sys
 import json
 import argparse
@@ -12,12 +12,12 @@ from dotenv import load_dotenv
 script_dir = Path(__file__).resolve().parent
 env_path = script_dir / '.env'
 load_dotenv(dotenv_path=env_path)
-
-
-
-
+ 
+ 
+ 
+ 
 load_dotenv()
-
+ 
 def main():
     parser = argparse.ArgumentParser(description='AI Farming Assistant Bridge')
     parser.add_argument('--audio-file', type=str, help='Path to audio file')
@@ -31,7 +31,7 @@ def main():
         user_message = ""
         has_audio_input = False
         has_image_input = False
-        
+        image_path = args.image_file if args.image_file else None
         
         if args.audio_file:
             try:
@@ -103,15 +103,17 @@ def main():
             ai_response = generate_malayalam_response(
                 user_message, 
                 has_image=has_image_input, 
-                has_audio=has_audio_input
+                has_audio=has_audio_input,
+                image_path=image_path
             )
             response_text = ""
             title_text = ""
+            confidence = ai_response.confidence
             if hasattr(ai_response, 'response'):
                 response_text = str(ai_response.response)
             if hasattr(ai_response, 'title'):
                 title_text = str(ai_response.title)
-
+ 
             if not response_text:
                 if isinstance(ai_response, str):
                     response_text = ai_response
@@ -128,6 +130,7 @@ def main():
             print(f"LLM error: {e}", file=sys.stderr)
             response_text = get_fallback_response(user_message)  
             title_text = "Farming Help"
+            confidence = 0
             print(f"Fallback response: '{response_text[:50]}...'", file=sys.stderr)
         
      
@@ -146,6 +149,7 @@ def main():
             "title": title_text,
             "response_text": response_text,
             "audio_base64": audio_base64,
+            "confidence" : confidence,
             "input_types": {
                 "audio": has_audio_input,
                 "text": bool(args.text),
@@ -161,7 +165,7 @@ def main():
             "success": False,
             "error": f"Processing failed: {str(e)}"
         }))
-
+ 
 def speech_to_text(audio_data):
   
     try:
@@ -176,7 +180,7 @@ def speech_to_text(audio_data):
             print("OPENAI_API_KEY not found in environment variables", file=sys.stderr)
             return None
         openai.api_key = api_key
-
+ 
         try:
             client = openai.OpenAI(api_key=api_key)
         except AttributeError:
@@ -329,7 +333,7 @@ def text_to_speech(text):
         from gtts import gTTS
         import re
        
-
+ 
         clean_text = clean_markdown_for_tts(text)
         text_lower = text.lower()
         malayalam_chars = 'ഇഎഒഔകഖഗഘചഛജഝടഠഡഢണതഥദധനപഫബഭമയരറലളഴവശഷസഹാിീുൂൃെേൈൊോൗ്'
@@ -368,34 +372,49 @@ def text_to_speech(text):
     except Exception as e:
         print(f"TTS generation error: {e}", file=sys.stderr)
         return None
-
-def get_fallback_response(user_message: str) -> str:
+ 
+# def get_fallback_response(user_message: str) -> str:
    
-    malayalam_chars = 'ഇഎഒഔകഖഗഘചഛജഝടഠഡഢണതഥദധനപഫബഭമയരറലളഴവശഷസഹാിീുൂൃെേൈൊോൗ്'
-    hindi_chars = 'अआइईउऊएऐओऔकखगघङचछजझञटठडढणतथदधनपফবভমযরলवशषসহািীুূৃেৈোৌং্'
+#     malayalam_chars = 'ഇഎഒഔകഖഗഘചഛജഝടഠഡഢണതഥദധനപഫബഭമയരറലളഴവശഷസഹാിീുൂൃെേൈൊോൗ്'
+#     hindi_chars = 'अआइईउऊएऐओऔकखगघङचछजझञटठडढणतथदधनपফবভমযরলवशषসহািীুূৃেৈোৌং্'
     
-    is_malayalam = any(char in user_message for char in malayalam_chars)
-    is_hindi = any(char in user_message for char in hindi_chars)
+#     is_malayalam = any(char in user_message for char in malayalam_chars)
+#     is_hindi = any(char in user_message for char in hindi_chars)
     
-    # Enhanced Malayalam responses
-    if is_malayalam:
-        if any(word in user_message.lower() for word in ['വള', 'fertilizer', 'ഉർവരക']):
-            return "ഇപ്പോഴത്തെ കാലാവസ്ഥയ്ക്ക് അനുയോജ്യമായ വളങ്ങൾ: നെൽകൃഷിക്ക് നൈട്രജൻ, ഫോസ്ഫറസ്, പൊട്ടാഷ് എന്നിവയുടെ സമീകൃത മിശ്രിതം ഉപയോഗിക്കുക. മണ്ണിന്റെ pH 6.0-7.0 ആയിരിക്കണം."
-        elif any(word in user_message.lower() for word in ['കാലാവസ്ഥ', 'weather', 'കാലാവസ്ഥ']):
-            return "കാലാവസ്ഥാ മാറ്റങ്ങൾ കൃഷിയെ ബാധിക്കുന്നു. മഴക്കാലത്ത് വിതയ്ക്കലും വേനൽക്കാലത്ത് ജലസേചനവും ശ്രദ്ധിക്കുക. പ്രാദേശിക കാലാവസ്ഥാ വകുപ്പിനെ സമീപിക്കുക."
-        else:
-            return "നിങ്ങളുടെ കൃഷിയെക്കുറിച്ചുള്ള ചോദ്യത്തിന് സഹായിക്കാൻ ഞാൻ ഇവിടെയുണ്ട്. വിളകൾ, മണ്ണ്, വളങ്ങൾ, കീടനിയന്ത്രണം എന്നിവയെക്കുറിച്ച് കൂടുതൽ വിവരങ്ങൾ ചോദിക്കുക."
+#     # Enhanced Malayalam responses
+#     if is_malayalam:
+#         if any(word in user_message.lower() for word in ['വള', 'fertilizer', 'ഉർവരക']):
+#             return "ഇപ്പോഴത്തെ കാലാവസ്ഥയ്ക്ക് അനുയോജ്യമായ വളങ്ങൾ: നെൽകൃഷിക്ക് നൈട്രജൻ, ഫോസ്ഫറസ്, പൊട്ടാഷ് എന്നിവയുടെ സമീകൃത മിശ്രിതം ഉപയോഗിക്കുക. മണ്ണിന്റെ pH 6.0-7.0 ആയിരിക്കണം."
+#         elif any(word in user_message.lower() for word in ['കാലാവസ്ഥ', 'weather', 'കാലാവസ്ഥ']):
+#             return "കാലാവസ്ഥാ മാറ്റങ്ങൾ കൃഷിയെ ബാധിക്കുന്നു. മഴക്കാലത്ത് വിതയ്ക്കലും വേനൽക്കാലത്ത് ജലസേചനവും ശ്രദ്ധിക്കുക. പ്രാദേശിക കാലാവസ്ഥാ വകുപ്പിനെ സമീപിക്കുക."
+#         else:
+#             return "നിങ്ങളുടെ കൃഷിയെക്കുറിച്ചുള്ള ചോദ്യത്തിന് സഹായിക്കാൻ ഞാൻ ഇവിടെയുണ്ട്. വിളകൾ, മണ്ണ്, വളങ്ങൾ, കീടനിയന്ത്രണം എന്നിവയെക്കുറിച്ച് കൂടുതൽ വിവരങ്ങൾ ചോദിക്കുക."
     
-    # Enhanced Hindi responses  
-    elif is_hindi:
-        if any(word in user_message.lower() for word in ['खाद', 'उर्वरक', 'fertilizer']):
-            return "फसल के लिए उर्वरक चुनते समय मिट्टी की जांच कराएं। नाइट्रोजन, फास्फोरस और पोटाश की संतुलित मात्रा का उपयोग करें। जैविक खाद भी मिलाएं।"
-        else:
-            return "मैं आपकी खेती संबंधी समस्याओं में मदद कर सकता हूँ। फसल, मिट्टी, उर्वरक, कीट नियंत्रण के बारे में पूछें। कृपया अधिक जानकारी दें।"
+#     # Enhanced Hindi responses  
+#     elif is_hindi:
+#         if any(word in user_message.lower() for word in ['खाद', 'उर्वरक', 'fertilizer']):
+#             return "फसल के लिए उर्वरक चुनते समय मिट्टी की जांच कराएं। नाइट्रोजन, फास्फोरस और पोटाश की संतुलित मात्रा का उपयोग करें। जैविक खाद भी मिलाएं।"
+#         else:
+#             return "मैं आपकी खेती संबंधी समस्याओं में मदद कर सकता हूँ। फसल, मिट्टी, उर्वरक, कीट नियंत्रण के बारे में पूछें। कृपया अधिक जानकारी दें।"
     
-    # Enhanced English responses
+#     # Enhanced English responses
+#     else:
+#         return "I'm your AI farming assistant! I can help with crops, soil management, fertilizers, pest control, weather planning, and sustainable farming practices. Please share your specific farming question."
+ 
+def get_fallback_response(user_message: str) -> str:
+    # Updated for better user-friendliness and language
+    try:
+        from langdetect import detect
+        detected_lang = detect(user_message)
+    except:
+        detected_lang = "en"
+    
+    if detected_lang == "ml":
+        return "നിങ്ങളുടെ ചോദ്യം മനസ്സിലായി! കൃഷി, വിളകൾ, മണ്ണ്, വളങ്ങൾ എന്നിവയെക്കുറിച്ച് സഹായിക്കാം. കൂടുതൽ വിവരങ്ങൾ നൽകൂ."
+    elif detected_lang == "hi":
+        return "आपका सवाल समझ आया! फसल, मिट्टी, उर्वरक के बारे में मदद कर सकता हूं। अधिक जानकारी दें।"
     else:
-        return "I'm your AI farming assistant! I can help with crops, soil management, fertilizers, pest control, weather planning, and sustainable farming practices. Please share your specific farming question."
-
+        return "I understand your question! I can help with crops, soil, fertilizers, and more. Please provide more details for better advice."
+ 
 if __name__ == "__main__":
     main()

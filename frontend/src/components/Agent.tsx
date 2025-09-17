@@ -899,11 +899,11 @@ const Agent: React.FC = () => {
 				if (content.audio) {
 					formData.append('audio_file', content.audio, 'audio.webm');
 				} else if (content.text) {
-					formData.append('text_input', content.text);
+					formData.append('text', content.text);
 				}
 
 				if (content.image) {
-					formData.append('has_image', 'true');
+					formData.append('imagefile', 'content.image');
 				}
 
 				const response = await fetch('http://localhost:10000/api/v1/ai/chat', {

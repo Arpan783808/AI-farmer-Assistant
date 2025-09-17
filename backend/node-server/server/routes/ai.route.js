@@ -41,7 +41,7 @@ router.post(
 		try {
 			const audioFile = req.files?.audio_file?.[0];
 			const imageFile = req.files?.image_file?.[0];
-			const textInput = req.body.text_input?.trim();
+			const textInput = req.body.text?.trim();
 			const hasImageFlag = req.body.has_image === 'true';
 
 			if (!audioFile && !textInput && !imageFile && !hasImageFlag) {

@@ -17,3 +17,4 @@ langchain-google-genai
 python-dotenv
 gtts
 openai
+langdetect
