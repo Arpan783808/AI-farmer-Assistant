@@ -17,12 +17,12 @@ const messageSchema = new mongoose.Schema(
       required: true,
     },
     images: {
-      type: Array,
-      default: [],
+      type: String,
+      default: null,
     },
     audio: {  
-      type: Array,
-      default: [],
+      type: String,
+      default:null
     },
     rating: {
       type: String,

@@ -10,9 +10,9 @@ export const sendMessage = async (req, res) => {
       chatId,
       usercontent,
       aicontent,
-      images = [],
-      audio = [],
-      aiaudio = [],
+      images = null,
+      audio = null,
+      aiaudio = null,
     } = req.body;
     if (!usercontent || !aicontent) {
       return res.status(400).json({ error: "Content is required" });
@@ -29,7 +29,7 @@ export const sendMessage = async (req, res) => {
         messages: [],
       });
     }
-    chat.title = title?title:"New Conversation";
+    chat.title = title ? title : "New Conversation";
     const userMessage = {
       chatId,
       role: "user",

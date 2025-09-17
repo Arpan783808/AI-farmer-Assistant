@@ -1,9 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { FormEvent } from "react";
-import { sendOtp, verifyOtp } from "../lib/auth_utils";
+// import { sendOtp, verifyOtp } from "../lib/auth_utils";
 import { useNavigate } from "react-router-dom";
 import { FarmLocationInput } from "./location";
 import useDocumentTitle from "../hooks/UseDocumentTitle";
+import { auth } from "../firebase"; // Ensure this path is correct
+import {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult,
+} from "firebase/auth";
+
+// We must explicitly tell TypeScript about the properties we are adding to the window object.
+declare global {
+  interface Window {
+    recaptchaVerifier?: RecaptchaVerifier;
+  }
+}
+
 function Authentication() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -19,13 +33,16 @@ function Authentication() {
   const [otp, setOtp] = useState("");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [userName, setuserName] = useState("User");
+  const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
   const API_BASE =
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
 
   const [loginData, setLoginData] = useState({
     phone: "",
   });
-  useDocumentTitle('GetStarted - AIChatApp');
+  useDocumentTitle("GetStarted - AIChatApp");
   const [signupData, setSignupData] = useState({
     username: "",
     phone: "",
@@ -41,13 +58,42 @@ function Authentication() {
 
   const [resetPhone, setResetPhone] = useState("");
   const [resetSent, setResetSent] = useState(false);
+  useEffect(() => {
+    // 3. This guard clause is the core of the fix.
+    // It ensures the code does not run until the ref is attached to the div.
+    if (!recaptchaContainerRef.current) {
+      return;
+    }
 
-  // OTP verification functions
-  const sendOtp1 = async (phone: string, login: boolean) => {
+    const verifier = new RecaptchaVerifier(
+      auth,
+      recaptchaContainerRef.current, // 4. Pass the ACTUAL DOM NODE, not a string ID.
+      {
+        size: "invisible",
+        callback: (response: any) => {
+          console.log("reCAPTCHA widget rendered and ready.");
+        },
+      }
+    );
+
+    window.recaptchaVerifier = verifier;
+
+    // The cleanup function is critical for preventing memory leaks.
+    return () => {
+      window.recaptchaVerifier?.clear();
+    };
+  }, []);
+
+  // --- OTP Logic ---
+  const handleSendOtp = async (phone: string, e: FormEvent, login: boolean) => {
+    e.preventDefault();
     setVerifyingOtp(true);
     setError(null);
-
     try {
+      if (!window.recaptchaVerifier) {
+        throw new Error("reCAPTCHA verifier not initialized.");
+      }
+      // You can add a check here to see if the user exists if isLogin is true
       if (login) {
         const res = await fetch(`${API_BASE}/api/checkphone`, {
           method: "POST",
@@ -60,37 +106,51 @@ function Authentication() {
           throw new Error(`Login failed: ${errorData.message}`);
         }
       }
-      const res = await sendOtp(phone);
-      if (!res.ok) throw new Error(`Failed to send OTP `);
+      const result = await signInWithPhoneNumber(
+        auth,
+        phone,
+        window.recaptchaVerifier
+      );
+      setConfirmationResult(result);
       setOtpSent(true);
     } catch (err: any) {
-      setError(err?.message || "Failed to send OTP");
+      setError(
+        err?.message || "Failed to send OTP. Check number and try again."
+      );
+      console.error(err);
     } finally {
       setVerifyingOtp(false);
     }
   };
 
-  const verifyOtp1 = async (otp: string) => {
-    setVerifyingOtp(true);
+  const handleVerifyOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult) return;
+    setSubmitting(true);
     setError(null);
     try {
-      const res = await verifyOtp(otp);
-      if (!res.ok) throw new Error(`OTP verification failed `);
+      const result = await confirmationResult.confirm(otp);
+      const user = result.user;
+      console.log("User verified successfully:", user);
+      const idToken = await user.getIdToken();
+      console.log("Firebase ID Token:", idToken);
+      setIdToken(idToken);
       setSignupData((prevData) => ({
         ...prevData,
-        idToken: res.idToken,
+        idToken: idToken,
       }));
-      setIdToken(res.idToken);
       setPhoneVerified(true);
-      setOtpSent(false);
+      setOtpSent(false); // Hide OTP form
       setOtp("");
-    } catch (err: any) {
-      setError(err?.message || "Invalid OTP");
+    } catch (error: any) {
+      console.error("Error verifying OTP:", error);
+      if (error.code === "auth/invalid-verification-code") {
+        alert("Invalid OTP. Please try again.");
+      }
     } finally {
-      setVerifyingOtp(false);
+      setSubmitting(false);
     }
   };
-
   const resetVerification = () => {
     setPhoneVerified(false);
     setOtpSent(false);
@@ -126,7 +186,7 @@ function Authentication() {
       // 2. Use the new constant for both operations
       setuserName(newUsername);
       localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
-      localStorage.setItem("username",newUsername);
+      localStorage.setItem("username", newUsername);
       navigate("/agent");
     } catch (err: any) {
       setError(err?.message || "Login failed");
@@ -154,7 +214,7 @@ function Authentication() {
       console.log(res);
       const newUsername = signupData.username; // <-- Use the value from your form data
       const data = await res.json();
-      
+
       setuserName(newUsername);
       localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
 
@@ -268,6 +328,7 @@ function Authentication() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
+        <div ref={recaptchaContainerRef}></div>
         <a
           href="/"
           className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
@@ -367,6 +428,7 @@ function Authentication() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
+      <div ref={recaptchaContainerRef}></div>
       <a
         href="/"
         className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
@@ -497,7 +559,7 @@ function Authentication() {
                 {!phoneVerified && !otpSent && (
                   <button
                     type="button"
-                    onClick={() => sendOtp1(loginData.phone, false)}
+                    onClick={(e) => handleSendOtp(loginData.phone, e, false)}
                     disabled={!loginData.phone || verifyingOtp}
                     className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -533,7 +595,7 @@ function Authentication() {
                     <div className="flex gap-3 mb-6">
                       <button
                         type="button"
-                        onClick={() => verifyOtp1(otp)}
+                        onClick={(e) => handleVerifyOtp(e)}
                         disabled={otp.length !== 6 || verifyingOtp}
                         className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
@@ -563,13 +625,13 @@ function Authentication() {
                             Phone verified successfully!
                           </span>
                         </div>
-                        {/* <button
+                        <button
                           type="button"
                           onClick={resetVerification}
                           className="text-xs text-green-600 hover:text-green-800 underline"
                         >
                           Change
-                        </button> */}
+                        </button>
                       </div>
                     </div>
 
@@ -638,7 +700,9 @@ function Authentication() {
                     {!otpSent && (
                       <button
                         type="button"
-                        onClick={() => sendOtp1(signupData.phone, true)}
+                        onClick={(e) =>
+                          handleSendOtp(signupData.phone, e, true)
+                        }
                         disabled={!signupData.phone || verifyingOtp}
                         className="w-full py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 mb-6 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
@@ -674,7 +738,7 @@ function Authentication() {
                         <div className="flex gap-3 mb-6">
                           <button
                             type="button"
-                            onClick={() => verifyOtp1(otp)}
+                            onClick={(e) => handleVerifyOtp(e)}
                             disabled={otp.length !== 6 || verifyingOtp}
                             className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-base font-medium hover:bg-green-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
@@ -704,13 +768,13 @@ function Authentication() {
                             Phone verified successfully!
                           </span>
                         </div>
-                        {/* <button
+                        <button
                           type="button"
                           onClick={resetVerification}
                           className="text-xs text-green-600 hover:text-green-800 underline"
                         >
                           Change
-                        </button> */}
+                        </button>
                       </div>
                     </div>
 
