@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import { sendSMS } from '../services/smsService.js';
 // import { sendWhatsApp } from '../services/whatsappService.js';
 import { sendTelegram } from '../services/telegramService.js';
+import { sendCustomMessage } from '../services/whatsappService.js';
 
 const validateCoordinates = (coordinates) => {
   const [lng, lat] = coordinates;
@@ -96,19 +97,20 @@ export const sendAlertNotifications = async (req, res) => {
         const notificationPromises = users.map(async (user) => {
             const message = `${alert.title}: ${alert.content}`;
             try {
-                switch (user.preferredChannel) {
-                    case 'sms':
-                        await sendSMS(user.phoneNumber, message);
-                        break;
-                    case 'whatsapp':
-                        await sendWhatsApp(user.phoneNumber, message);
-                        break;
-                    case 'telegram':
-                        await sendTelegram(user.phoneNumber, message);
-                        break;
-                    default:
-                        await sendSMS(user.phoneNumber, message);
-                }
+                // switch (user.preferredChannel) {
+                //     case 'sms':
+                //         await sendSMS(user.phoneNumber, message);
+                //         break;
+                //     case 'whatsapp':
+                //         await sendWhatsApp(user.phoneNumber, message);
+                //         break;
+                //     case 'telegram':
+                //         await sendTelegram(user.phoneNumber, message);
+                //         break;
+                //     default:
+                //         await sendSMS(user.phoneNumber, message);
+                // }
+                const sending = sendCustomMessage(user.primaryPhone, message);
                 return { userId: user._id, status: 'sent' };
             } catch (error) {
                 return { userId: user._id, status: 'failed', error: error.message };
