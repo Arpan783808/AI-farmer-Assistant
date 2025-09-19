@@ -217,7 +217,7 @@ function Authentication() {
 
       setuserName(newUsername);
       localStorage.setItem("currentUser", JSON.stringify(data.user)); // <-- Use the new value directly
-
+      localStorage.setItem("username", newUsername);
       navigate("/agent");
     } catch (err: any) {
       setError(err?.message || "Signup failed");
