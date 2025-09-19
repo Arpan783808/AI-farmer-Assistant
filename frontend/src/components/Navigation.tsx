@@ -80,7 +80,7 @@ export const Navigation = () => {
               <>
                 <a
                   onClick={() => navigate("/agent")}
-                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
+                  className="cursor-pointer bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
                 >
                   Agent
                 </a>

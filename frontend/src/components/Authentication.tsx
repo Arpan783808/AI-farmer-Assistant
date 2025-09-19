@@ -10,7 +10,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from "firebase/auth";
-
+import { Link } from "react-router-dom";
 // We must explicitly tell TypeScript about the properties we are adding to the window object.
 declare global {
   interface Window {
@@ -247,15 +247,15 @@ function Authentication() {
     if (resetSent) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
-          <a
-            onClick={() => navigate("/")}
+          <Link
+            to="/"
             className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
           >
-            <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
+            <div className="cursor-pointer w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
               🌱
             </div>
             <span className="text-sm font-medium">Back</span>
-          </a>
+          </Link>
           <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Left Panel - Image */}
             <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500">
@@ -331,7 +331,7 @@ function Authentication() {
         <div ref={recaptchaContainerRef}></div>
         <a
           onClick={() => navigate("/")}
-          className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
+          className="cursor-pointer absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
         >
           <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
             🌱
@@ -431,7 +431,7 @@ function Authentication() {
       <div ref={recaptchaContainerRef}></div>
       <a
         onClick={() => navigate("/")}
-        className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
+        className="cursor-pointer absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
       >
         <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
           🌱
