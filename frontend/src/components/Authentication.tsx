@@ -248,7 +248,7 @@ function Authentication() {
       return (
         <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
           <a
-            href="/"
+            onClick={() => navigate("/")}
             className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
           >
             <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
@@ -330,7 +330,7 @@ function Authentication() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
         <div ref={recaptchaContainerRef}></div>
         <a
-          href="/"
+          onClick={() => navigate("/")}
           className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
         >
           <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
@@ -430,7 +430,7 @@ function Authentication() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-teal-50 flex items-center justify-center p-5 relative">
       <div ref={recaptchaContainerRef}></div>
       <a
-        href="/"
+        onClick={() => navigate("/")}
         className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
       >
         <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
@@ -907,7 +907,7 @@ function Authentication() {
                         />
                         I agree to the{" "}
                         <a
-                          href="#"
+                          onClick={() => navigate("/hehe")}
                           className="text-green-500 no-underline hover:underline"
                         >
                           Terms & Conditions

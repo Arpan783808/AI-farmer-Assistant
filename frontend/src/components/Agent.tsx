@@ -20,7 +20,7 @@ import {
 import useDocumentTitle from "@/hooks/UseDocumentTitle";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import farmingHero from "../../public/placeholder.svg";
-
+import { useNavigate } from "react-router-dom";
 // Types
 interface Chat {
   id: string;
@@ -689,6 +689,7 @@ const InputBar: React.FC<InputBarProps> = ({
 
 // Main Agent Component
 const Agent: React.FC = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const API_BASE =
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
@@ -1088,7 +1089,7 @@ const Agent: React.FC = () => {
     <div className="flex h-screen bg-background">
       {/* Top Navigation */}'
       <a
-        href="/"
+        onClick={() => navigate("/")}
         className="fixed top-4 right-4 z-50 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white/90 backdrop-blur border border-gray-200 shadow hover:bg-white transition-colors"
       >
         <span>Back</span>

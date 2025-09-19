@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Leaf } from "lucide-react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-
+import { useNavigate } from "react-router-dom";
 export const Navigation = () => {
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const API_BASE =
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
@@ -46,27 +47,27 @@ export const Navigation = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-6 cursor-pointer">
             <a
-              href="#features"
-              className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-sm"
+              onClick={() => navigate("/hehe")}
+              className="cursor-pointer text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-sm"
             >
               Features
             </a>
             <a
-              href="#how-it-works"
+              onClick={() => navigate("/hehe")}
               className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-sm"
             >
               How It Works
             </a>
             <a
-              href="#pricing"
+              onClick={() => navigate("/hehe")}
               className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-sm"
             >
               Pricing
             </a>
             <a
-              href="#testimonials"
+              onClick={() => navigate("/hehe")}
               className="text-gray-700 hover:text-emerald-600 transition-colors duration-200 font-medium text-sm"
             >
               Testimonials
@@ -77,9 +78,8 @@ export const Navigation = () => {
           <div className="flex items-center space-x-3">
             {isLoggedIn ? (
               <>
-                
                 <a
-                  href="/agent"
+                  onClick={() => navigate("/agent")}
                   className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
                 >
                   Agent
@@ -94,14 +94,14 @@ export const Navigation = () => {
             ) : (
               <>
                 <a
-                  href="/login"
-                  className="text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200 text-sm"
+                  onClick={() => navigate("/login")}
+                  className="cursor-pointer text-gray-700 hover:text-emerald-600 font-medium transition-colors duration-200 text-sm"
                 >
                   Log In
                 </a>
                 <a
-                  href="/login"
-                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
+                  onClick={() => navigate("/login")}
+                  className="cursor-pointer bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg text-sm"
                 >
                   Sign Up
                 </a>
