@@ -689,26 +689,27 @@ const InputBar: React.FC<InputBarProps> = ({
 
 // Main Agent Component
 const Agent: React.FC = () => {
-	const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const API_BASE =
+    (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
+  //(TODO) fetch history from backend and set in chats
+  const [chats, setChats] = useState<Chat[]>([]);
+  useEffect(() => {
+    // We define an async function inside the effect to use await.
+    const fetchChats = async () => {
+      // 1. Set loading state to provide immediate UI feedback.
+      setIsLoading(true);
 
-	//(TODO) fetch history from backend and set in chats
-	const [chats, setChats] = useState<Chat[]>([]);
-	useEffect(() => {
-		// We define an async function inside the effect to use await.
-		const fetchChats = async () => {
-			// 1. Set loading state to provide immediate UI feedback.
-			setIsLoading(true);
-
-			try {
-				// 2. Make the API call with credentials to send the session cookie.
-				const response = await fetch(
-					'http://localhost:10000/api/chat/getAllChats',
-					{
-						method: 'GET',
-						headers: { 'Content-Type': 'application/json' },
-						credentials: 'include', // CRITICAL: This sends your 'session' cookie.
-					}
-				);
+      try {
+        // 2. Make the API call with credentials to send the session cookie.
+        const response = await fetch(
+          `${API_BASE}/api/chat/getAllChats`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include", // CRITICAL: This sends your 'session' cookie.
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -754,15 +755,15 @@ const Agent: React.FC = () => {
         return;
       }
 
-			setIsLoading(true);
-			try {
-				const response = await fetch(
-					`http://localhost:10000/api/chat/get/${chatId}`,
-					{
-						credentials: 'include',
-					}
-				);
-				if (!response.ok) throw new Error('Failed to fetch chat details.');
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE}/api/chat/get/${chatId}`,
+          {
+            credentials: "include",
+          }
+        );
+        if (!response.ok) throw new Error("Failed to fetch chat details.");
 
         const data = await response.json();
 
@@ -929,12 +930,12 @@ const Agent: React.FC = () => {
           formData.append("image_file", content.image);
         }
 
-				const response = await fetch('http://localhost:10000/api/v1/ai/chat', {
-					method: 'POST',
-					// headers: { "Content-Type": "application/json" },
-					body: formData,
-					credentials: 'include',
-				});
+        const response = await fetch(`${API_BASE}/api/v1/ai/chat`, {
+          method: "POST",
+          // headers: { "Content-Type": "application/json" },
+          body: formData,
+          credentials: "include",
+        });
 
         console.log("📡 API Response status:", response.status);
 
@@ -966,53 +967,64 @@ const Agent: React.FC = () => {
             )
           );
 
-					// Play audio response if available
-					if (result.audio_base64) {
-						setTimeout(() => {
-							playAudioResponse(result.audio_base64);
-						}, 500);
-					}
-					console.log('Title:', result.title);
-					let newTitle = currentChat?.title;
-					console.log('New title:', result.title || 'No new title');
-					if (
-						currentChat?.title === 'New Conversation' ||
-						currentChat?.title === 'New Chat'
-					) {
-						newTitle = result.title;
-					}
-					console.log('Current title:', currentChat?.title || 'No title');
-					// update chat state in the backend
-					const updatePayload = {
-						title: newTitle,
-						chatId: activeChat,
-						usercontent: userMessage.content,
-						aicontent: aiResponse.content,
-						images: content.image ? [content.image.name] : [],
-						audio: content.audio ? ['user_audio.webm'] : [], //bhai arpan, audio store nhi krni thi na?, well do it by yourself!
-						aiaudio: aiResponse.audio,
-					};
-
-					fetch('http://localhost:10000/api/chat/sendMessage', {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify(updatePayload),
-						credentials: 'include', // Ensures cookies (like session) are sent
-					})
-						.then((res) => res.json())
-						.then((data) =>
-							console.log('✅ Chat history saved:', data.chat.chatId)
-						)
-						.catch((err) =>
-							console.error('🔥 Failed to save chat history:', err)
-						);
-				} else {
-					throw new Error(result.error || 'API call failed');
-				}
-			} catch (error: unknown) {
-				console.error('❌ Error calling Malayalam API:', error);
-				// Safely derive an error message from unknown, so do it!!
-				const errMsg = error instanceof Error ? error.message : String(error);
+          // Play audio response if available
+          if (result.audio_base64) {
+            setTimeout(() => {
+              playAudioResponse(result.audio_base64);
+            }, 500);
+          }
+          console.log("Title:", result.title);
+          let newTitle = currentChat?.title;
+          console.log(newTitle);
+          if (
+            !currentChat ||
+            currentChat?.title === "New Conversation" ||
+            currentChat?.title === "New Chat"
+          ) {
+            newTitle = result.title;
+          }
+          console.log(newTitle);
+          // update chat state in the backend
+          const updatePayload = {
+            title: newTitle,
+            chatId: activeChat,
+            usercontent: userMessage.content,
+            aicontent: aiResponse.content,
+            images: null,
+            audio: content.audio ? content.audio : null,
+            aiaudio: aiResponse.audio ? aiResponse.audio : null,
+          };
+          fetch(`${API_BASE}/api/chat/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatePayload),
+            credentials: "include", // Ensures cookies (like session) are sent
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              console.log("✅ Chat history saved:", data.chat.chatId);
+              setChats((prevChats) =>
+                prevChats.map((chat) =>
+                  chat.id === chatId
+                    ? {
+                        ...chat,
+                        id: data.chat.chatId,
+                      }
+                    : chat
+                )
+              );
+              setActiveChat(data.chat.chatId);
+            })
+            .catch((err) =>
+              console.error("🔥 Failed to save chat history:", err)
+            );
+        } else {
+          throw new Error(result.error || "API call failed");
+        }
+      } catch (error: unknown) {
+        console.error("❌ Error calling Malayalam API:", error);
+        // Safely derive an error message from unknown, so do it!!
+        const errMsg = error instanceof Error ? error.message : String(error);
 
         // Fallback to original dummy response on error
         const aiResponse: Message = {
