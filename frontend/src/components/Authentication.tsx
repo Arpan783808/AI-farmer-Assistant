@@ -402,7 +402,7 @@ function Authentication() {
                     <span className="absolute left-3 text-base z-10">📱</span>
                     <input
                       type="tel"
-                      placeholder="+91 9999900000"
+                      placeholder="use this +917838080418"
                       value={resetPhone}
                       onChange={(e) => setResetPhone(e.target.value)}
                       className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
@@ -544,7 +544,7 @@ function Authentication() {
                     <span className="absolute left-3 text-base z-10">📱</span>
                     <input
                       type="tel"
-                      placeholder="+91 00000 00000"
+                      placeholder="use this- +917838080418"
                       value={loginData.phone}
                       onChange={(e) =>
                         setLoginData({ ...loginData, phone: e.target.value })
@@ -579,7 +579,7 @@ function Authentication() {
                         </span>
                         <input
                           type="text"
-                          placeholder="Enter 6-digit OTP"
+                          placeholder="enter this otp- 123456"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
                           className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
@@ -683,7 +683,7 @@ function Authentication() {
                         </span>
                         <input
                           type="tel"
-                          placeholder="+919999900000"
+                          placeholder="use this +917838080418"
                           value={signupData.phone}
                           onChange={(e) =>
                             setSignupData({
@@ -722,7 +722,7 @@ function Authentication() {
                             </span>
                             <input
                               type="text"
-                              placeholder="Enter 6-digit OTP"
+                              placeholder="enter this otp- 123456"
                               value={otp}
                               onChange={(e) => setOtp(e.target.value)}
                               className="w-full py-3 pl-10 pr-3 border-2 border-gray-200 rounded-lg text-base focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200 bg-white"
