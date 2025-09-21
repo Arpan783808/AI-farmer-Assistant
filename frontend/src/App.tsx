@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
-import { HeroSection } from './components/HeroSection';
+// import { HeroSection } from './components/HeroSection';
 import Authentication from './components/Authentication.tsx';
 import Agent from './components/Agent.tsx';
 import NotFound from './components/NotFound.tsx';
@@ -14,9 +14,9 @@ import PublicRoute from './components/PublicRoute.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import { FeaturesSection } from './components/FeaturesSection.tsx';
 
-import {Navigation1} from './components/Navigation1.tsx';
+// import {Navigation1} from './components/Navigation1.tsx';
 import { HeroSection1 } from './components/HeroSection1.tsx';
-import { HeroSection2 } from './components/HeroSection2.tsx';
+// import { HeroSection2 } from './components/HeroSection2.tsx';
 
 interface UserProfileProps {
   username: string;

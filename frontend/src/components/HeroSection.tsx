@@ -42,7 +42,7 @@ export const HeroSection = () => {
           </div>
 
           {/* Right Column - Image from public folder */}
-          <div
+          {/* <div
             className="flex justify-center lg:justify-end animate-slide-up"
             style={{ animationDelay: "0.6s" }}
           >
@@ -53,7 +53,28 @@ export const HeroSection = () => {
               loading="eager"
               decoding="async"
             />
-          </div>
+          </div> */}
+          <div className="flex justify-center lg:justify-end">
+           <div className="relative">
+             <img
+               src="/kerala-farmer-using-smartphone-in-rice-field-with-.jpg"
+               alt="Kerala farmer using AI assistant on smartphone"
+               className="max-w-full h-auto w-full sm:w-[400px] lg:w-[500px] object-cover rounded-lg shadow-xl"
+               loading="eager"
+               decoding="async"
+             />
+             {/* Floating Chat Bubble */}
+             <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg max-w-xs">
+               <p className="text-sm font-medium text-gray-900 mb-2">
+                 "വാഴയിലെ ഇലപ്പുള്ളി രോഗത്തിന് ഏത് കീടനാശിനി?"
+               </p>
+               <div className="flex items-center space-x-2 text-xs text-gray-600">
+                 <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
+                 <span>AI preparing answer...</span>
+               </div>
+             </div>
+           </div>
+           </div>
         </div>
 
         {/* Scroll Hint
