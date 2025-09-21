@@ -12,6 +12,11 @@ import AdminOnlyPrivateRoute from './components/AdminRoute.tsx';
 import PublicRoute from './components/PublicRoute.tsx';
 // import Dashboard from './components/Alert.tsx';
 import Dashboard from './pages/Dashboard.tsx';
+import { FeaturesSection } from './components/FeaturesSection.tsx';
+
+import {Navigation1} from './components/Navigation1.tsx';
+import { HeroSection1 } from './components/HeroSection1.tsx';
+import { HeroSection2 } from './components/HeroSection2.tsx';
 
 interface UserProfileProps {
   username: string;
@@ -69,7 +74,11 @@ function App() {
                 </div>
               )}
               <Navigation />
-              <HeroSection />
+              {/* <Navigation1 /> */}
+              {/* <HeroSection /> */}
+              <HeroSection1 />
+              {/* <HeroSection2 /> */}
+              <FeaturesSection/>
             </>
           }
         />
@@ -84,6 +93,7 @@ function App() {
           {/* <Route path="/admin" element={<AdminDashboard />} /> */}
         </Route>
         <Route element={<PublicRoute />}>
+      
           <Route path="/login" element={<Authentication />} />
         </Route>
         <Route path="*" element={<NotFound />} />

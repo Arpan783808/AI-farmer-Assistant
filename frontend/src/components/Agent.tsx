@@ -15,6 +15,7 @@ import {
   User,
   Volume2,
   X,
+  Search
 } from "lucide-react";
 
 import useDocumentTitle from "@/hooks/UseDocumentTitle";
@@ -58,20 +59,31 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
 }) => {
   useDocumentTitle("Chat - AIChatApp");
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredChats = chats.filter((chat) =>
+    chat.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Clear search input
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
   return (
     <>
       {/* Overlay for mobile */}
+      
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm lg:hidden z-40"
           onClick={onToggle}
         />
       )}
+      
 
       {/* Sidebar */}
       <div
         className={`
-          fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-1 transition-transform duration-300 ease-in-out shadow-lg
+          fixed top-0 left-0 h-screen overflow-hidden bg-white border-r border-gray-200 z-1 transition-transform duration-300 ease-in-out shadow-lg
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           lg:relative lg:translate-x-0
           ${isOpen ? "w-80" : "lg:w-16"}
@@ -96,6 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <span>New Chat</span>
             </button>
           )}
+          
 
           {/* {!isOpen && (
             <button
@@ -107,11 +120,39 @@ const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )} */}
         </div>
+
+        {isOpen && (
+        <div className="px-4 py-2 bg-white">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search chats..."
+              className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-noto-sans-malayalam"
+              aria-label="Search chat history"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
         {/* Chat History */}
         {isOpen && (
-          <div className="flex-1 overflow-y-auto p-2 bg-white">
+          <div
+            className="overflow-y-auto p-2 bg-white h-[calc(100vh-128px)]"
+            aria-label="Chat history"
+          >
             <div className="space-y-1">
-              {chats.map((chat) => (
+              {filteredChats.map((chat) => (
                 <button
                   key={chat.id}
                   onClick={() => onChatSelect(chat.id)}
@@ -127,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex items-start gap-3">
                     <MessageCircle className="h-4 w-4 mt-1 text-gray-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 truncate font-noto-sans-malayalam">
                         {chat.title}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
@@ -138,10 +179,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               ))}
 
-              {chats.length === 0 && (
+              {filteredChats.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No conversations yet</p>
+                  <p className="text-sm">
+                    {searchQuery
+                      ? "No chats match your search"
+                      : "No conversations yet"}
+                  </p>
                 </div>
               )}
             </div>

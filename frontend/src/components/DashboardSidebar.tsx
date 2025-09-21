@@ -116,6 +116,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems } from 'flowbite-react';
 import { HiArrowSmRight, HiUser, HiPlusCircle, HiExclamationCircle, HiBell, HiHome } from 'react-icons/hi';
+import { TbWheat } from "react-icons/tb";
 import { Link } from 'react-router-dom';
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -217,6 +218,11 @@ const DashboardSidebar: React.FC = () => {
                 <Link to="/dashboard?tab=escalated-issues">
                   <SidebarItem active={tab === 'escalated-issues'} icon={HiExclamationCircle}>
                     Escalated Issues
+                  </SidebarItem>
+                </Link>
+                <Link to="/dashboard?tab=crop-management">
+                  <SidebarItem active={tab === 'crop-management'} icon={TbWheat}>
+                    Crops
                   </SidebarItem>
                 </Link>
               </>

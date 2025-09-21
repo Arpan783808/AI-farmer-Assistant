@@ -258,7 +258,7 @@ function Authentication() {
           </Link>
           <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Left Panel - Image */}
-            <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500">
+            <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500 hidden md:block">
               <div className="relative w-full h-full">
                 <img
                   src="https://images.pexels.com/photos/2132227/pexels-photo-2132227.jpeg?auto=compress&cs=tinysrgb&w=800"
@@ -340,7 +340,7 @@ function Authentication() {
         </a>
         <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Left Panel - Image */}
-          <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500">
+          <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500 hidden md:block">
             <div className="relative w-full h-full">
               <img
                 src="https://images.pexels.com/photos/2132227/pexels-photo-2132227.jpeg?auto=compress&cs=tinysrgb&w=800"
@@ -440,7 +440,7 @@ function Authentication() {
       </a>
       <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Left Panel - Image */}
-        <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500">
+        <div className="flex-1 relative bg-gradient-to-br from-green-500 to-blue-500 hidden md:block">
           <div className="relative w-full h-full">
             <img
               src="https://images.pexels.com/photos/2132227/pexels-photo-2132227.jpeg?auto=compress&cs=tinysrgb&w=800"
@@ -544,7 +544,7 @@ function Authentication() {
                     <span className="absolute left-3 text-base z-10">📱</span>
                     <input
                       type="tel"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="+91 00000 00000"
                       value={loginData.phone}
                       onChange={(e) =>
                         setLoginData({ ...loginData, phone: e.target.value })

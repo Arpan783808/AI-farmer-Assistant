@@ -1,6 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client, Storage, ID } from 'appwrite';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import debounce from 'lodash/debounce';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+});
 
 interface User {
   id: string;
@@ -23,6 +34,12 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+interface SearchResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
 const DashboardProfile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<User>>({
@@ -40,10 +57,13 @@ const DashboardProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [geolocationError, setGeolocationError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const navigate = useNavigate();
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000';
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize Appwrite client
   const client = new Client()
     .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
     .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
@@ -76,7 +96,6 @@ const DashboardProfile: React.FC = () => {
         credentials: 'include',
       });
       const result: ApiResponse<User> = await response.json();
-      console.log('fetchUser result:', result);
       if (result.success && result.data) {
         setFormData({
           username: result.data.username || '',
@@ -95,23 +114,22 @@ const DashboardProfile: React.FC = () => {
       setError('Error fetching user data');
     }
   };
-
+  const MapUpdater: React.FC<{ coordinates: [number, number] | null }> = ({ coordinates }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (coordinates && coordinates[0] !== 0 && coordinates[1] !== 0) {
+        map.setView([coordinates[1], coordinates[0]], 13);
+      }
+    }, [coordinates, map]);
+    return null;
+  };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    if (name === 'location.coordinates[0]' || name === 'location.coordinates[1]') {
-      const index = name === 'location.coordinates[0]' ? 0 : 1;
-      setFormData((prev) => ({
-        ...prev,
-        location: {
-          type: 'Point',
-          coordinates: [
-            index === 0 ? parseFloat(value) || 0 : prev.location?.coordinates?.[0] || 0,
-            index === 1 ? parseFloat(value) || 0 : prev.location?.coordinates?.[1] || 0,
-          ],
-        },
-      }));
-    } else if (name === 'crops') {
+    if (name === 'crops') {
       setFormData((prev) => ({ ...prev, crops: value.split(',').map((crop) => crop.trim()).filter(Boolean) }));
+    } else if (name === 'farmAddress') {
+      setFormData((prev) => ({ ...prev, farmAddress: value }));
+      debouncedAddressSearch(value);
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -124,14 +142,13 @@ const DashboardProfile: React.FC = () => {
         setImageUploadError('Please select an image file');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         setImageUploadError('Image size must be less than 5MB');
         return;
       }
       setImageFile(file);
       setImageUploadError(null);
       setImageUploadSuccess(null);
-      // Set temporary local URL for immediate preview
       const tempUrl = URL.createObjectURL(file);
       setFormData((prev) => ({ ...prev, profilePicture: tempUrl }));
       uploadImage(file);
@@ -146,22 +163,15 @@ const DashboardProfile: React.FC = () => {
         ID.unique(),
         file
       );
-      const fileUrl = storage.getFileView(import.meta.env.VITE_APPWRITE_BUCKET_ID, response.$id);
-    //   console.log(fileUrl);
-    //   console.log(fileUrl);
+      const fileUrl = storage.getFileView(import.meta.env.VITE_APPWRITE_BUCKET_ID, response.$id).href;
       setFormData((prev) => ({ ...prev, profilePicture: fileUrl }));
-
       localStorage.setItem('profilePicture', fileUrl);
       setImageUploadSuccess('Profile picture uploaded successfully!');
       setImageFile(null);
     } catch (error: any) {
       console.error('Image upload failed:', error);
       setImageUploadError(error.message || 'Failed to upload image');
-      // Revert to previous profile picture on error
-      setFormData((prev) => ({
-        ...prev,
-        profilePicture: user?.profilePicture || '',
-      }));
+      setFormData((prev) => ({ ...prev, profilePicture: user?.profilePicture || '' }));
     } finally {
       setIsUploading(false);
     }
@@ -175,6 +185,11 @@ const DashboardProfile: React.FC = () => {
     }
     if (isUploading) {
       setError('Please wait for the image to finish uploading');
+      return;
+    }
+    const [lng, lat] = formData.location?.coordinates || [0, 0];
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setError('Invalid latitude or longitude values');
       return;
     }
 
@@ -205,11 +220,9 @@ const DashboardProfile: React.FC = () => {
       setError('No user data available');
       return;
     }
-
     if (!window.confirm('Are you sure you want to delete your profile?')) {
       return;
     }
-
     try {
       const response = await fetch(`${API_BASE}/api/user/delete/${user.id}`, {
         method: 'DELETE',
@@ -229,7 +242,103 @@ const DashboardProfile: React.FC = () => {
     }
   };
 
-  console.log('formData:', formData);
+  const handleGeolocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setFormData((prev) => ({
+            ...prev,
+            location: { type: 'Point', coordinates: [longitude, latitude] },
+          }));
+          setGeolocationError(null);
+          fetchAddressFromCoordinates(longitude, latitude);
+        },
+        (error) => {
+          setGeolocationError('Unable to fetch current location: ' + error.message);
+        }
+      );
+    } else {
+      setGeolocationError('Geolocation is not supported by this browser.');
+    }
+  };
+
+  const fetchAddressFromCoordinates = async (lng: number, lat: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&countrycodes=in`
+      );
+      const data = await response.json();
+      if (data.display_name) {
+        setFormData((prev) => ({ ...prev, farmAddress: data.display_name }));
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      setError('Failed to fetch address from coordinates');
+    }
+  };
+
+  const handleAddressSearch = async (address: string) => {
+    if (!address || address.length < 4) {
+      setSearchResults([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&countrycodes=in&viewbox=68,8,97,37&bounded=0`
+      );
+      const data = await response.json();
+      setSearchResults(data);
+      setShowSuggestions(data.length > 0);
+      if (data.length === 0) {
+        setError('No results found. Try a more specific address (e.g., "Farm in Delhi, India") or use the map.');
+      } else {
+        setError(null);
+      }
+    } catch (error) {
+      console.error('Error searching address:', error);
+      setError('Failed to fetch locations. Check your connection or try again.');
+      setSearchResults([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const debouncedAddressSearch = debounce(handleAddressSearch, 500);
+
+  const handleSuggestionSelect = (result: SearchResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      farmAddress: result.display_name,
+      location: {
+        type: 'Point',
+        coordinates: [parseFloat(result.lon), parseFloat(result.lat)],
+      },
+    }));
+    setSearchResults([]);
+    setShowSuggestions(false);
+    if (searchInputRef.current) {
+      searchInputRef.current.value = result.display_name;
+      searchInputRef.current.focus();
+    }
+    setError(null);
+  };
+
+  const MapClickHandler: React.FC = () => {
+    useMapEvents({
+      click(e) {
+        const { lng, lat } = e.latlng;
+        setFormData((prev) => ({
+          ...prev,
+          location: { type: 'Point', coordinates: [lng, lat] },
+        }));
+        fetchAddressFromCoordinates(lng, lat);
+        setSearchResults([]);
+        setShowSuggestions(false);
+      },
+    });
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-6">
@@ -266,6 +375,14 @@ const DashboardProfile: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
             {imageUploadSuccess}
+          </div>
+        )}
+        {geolocationError && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {geolocationError}
           </div>
         )}
 
@@ -308,6 +425,23 @@ const DashboardProfile: React.FC = () => {
                     <p className="text-lg text-gray-800">{user.role === 'admin' ? 'Admin' : 'Farmer'}</p>
                   </div>
                 </div>
+                <div className="h-64">
+                  <MapContainer
+                    center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
+                    zoom={formData.location?.coordinates ? 13 : 5}
+                    style={{ height: '100%', width: '100%' }}
+                    className="rounded-lg shadow-md"
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
+                      <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
+                    )}
+                    <MapUpdater coordinates={formData.location?.coordinates || null} />
+                  </MapContainer>
+                </div>
                 {(user.id === user.id || user.role === 'admin') && (
                   <div className="flex justify-center space-x-4">
                     <button
@@ -343,7 +477,7 @@ const DashboardProfile: React.FC = () => {
                       </svg>
                     </label>
                     <input
-                      title='img'
+                    title="pp"
                       id="profilePicture"
                       type="file"
                       accept="image/*"
@@ -365,7 +499,7 @@ const DashboardProfile: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                     <input
-                      title='username'
+                      title = 'username'
                       type="text"
                       name="username"
                       value={formData.username || ''}
@@ -385,51 +519,74 @@ const DashboardProfile: React.FC = () => {
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Farm Address</label>
-                    <input
-                      title='address'
-                      type="text"
-                      name="farmAddress"
-                      value={formData.farmAddress || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                    />
+                  <div className="sm:col-span-2 relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Farm Address (India)</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        name="farmAddress"
+                        value={formData.farmAddress || ''}
+                        onChange={handleInputChange}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+                        placeholder="e.g., Farm in Delhi, India or Mumbai village"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                        ref={searchInputRef}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGeolocation}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                      >
+                        Use Current Location
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Tip: Include city or "India" for better results.</p>
+                    {showSuggestions && searchResults.length > 0 && (
+                      <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                        {searchResults.map((result, index) => (
+                          <li
+                            key={index}
+                            onMouseDown={() => handleSuggestionSelect(result)}
+                            className="p-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                          >
+                            {result.display_name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Location on Map (India-focused)</label>
+                    <div className="h-64 relative z-0">
+                      <MapContainer
+                        center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
+                        zoom={formData.location?.coordinates ? 13 : 5}
+                        style={{ height: '100%', width: '100%' }}
+                        className="rounded-lg shadow-md"
+                      >
+                        <TileLayer
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        />
+                        {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
+                          <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
+                        )}
+                        <MapUpdater coordinates={formData.location?.coordinates || null} />
+                        <MapClickHandler />
+                      </MapContainer>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">Click on the map to set the farm location (zoom/pan to India if needed).</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Crops (comma-separated)</label>
                     <input
-                      title='crops'
                       type="text"
                       name="crops"
                       value={formData.crops?.join(', ') || ''}
                       onChange={handleInputChange}
-                      placeholder="e.g., Wheat, Corn, Rice"
+                      placeholder="e.g., Wheat, Rice, Cotton"
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
-                    <input
-                      title='lo'
-                      type="number"
-                      name="location.coordinates[0]"
-                      value={formData.location?.coordinates?.[0] || 0}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                      step="any"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
-                    <input
-                      title='l1'
-                      type="number"
-                      name="location.coordinates[1]"
-                      value={formData.location?.coordinates?.[1] || 0}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                      step="any"
                     />
                   </div>
                 </div>
@@ -447,6 +604,9 @@ const DashboardProfile: React.FC = () => {
                       setIsEditing(false);
                       setFormData((prev) => ({ ...prev, profilePicture: user?.profilePicture || '' }));
                       setImageFile(null);
+                      setSearchResults([]);
+                      setShowSuggestions(false);
+                      setError(null);
                     }}
                     className="bg-gray-300 text-gray-800 px-6 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors duration-200"
                   >

@@ -6,7 +6,7 @@ import DashboardSidebar from '../components/DashboardSidebar';
 import { CreateAlert, ListAlerts, UpdateAlert } from '@/components/DashboardAlert';
 import DashboardProfile from '@/components/DashboardProfile';
 import useDocumentTitle from '@/hooks/UseDocumentTitle';
-
+import { CropManagement } from '@/components/DashboardCrop';
 // Define interfaces for type safety
 
 
@@ -103,6 +103,8 @@ const Dashboard: React.FC = () => {
         {tab === 'active-alerts' && <ListAlerts />}
         {tab === 'update-alert' && <UpdateAlert />}
         {tab === 'escalated-issues' && <EscalatedIssues />}
+        {tab === 'crop-management' && <CropManagement />}
+        {/* /dashboard?tab=crop-management */}
         {tab === '*' && <DashboardNotFound />}
         {!tab && <DashboardProfile />}
       </div>
