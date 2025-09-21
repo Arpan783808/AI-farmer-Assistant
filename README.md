@@ -20,10 +20,10 @@ This README provides an overview of the project, including team details, relevan
 ### NOTE - To test the application, directly login using the credentials mentioned in the placeholder.
 ## Project Links
 
-- **SIH Presentation:** ([Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true))([URL TO PPT UPLOADED TO GITHUB])
-- **Video Demonstration:** [Watch Video](UNLISTED YOUTUBE LINK)
-- **Live Deployment:** ([View Deployment](https://ai-farmer-assistant-seven.vercel.app/))([DEPLOYED LINK IF ANY])
-- **Source Code:** ([GitHub Repository](https://github.com/Arpan783808/AI-farmer-Assistant))([GITHUB LINK TO THE REPO])
+- **SIH Presentation:** ([Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true))
+- **Video Demonstration:** [Watch Video]
+- **Live Deployment:** ([View Deployment](https://ai-farmer-assistant-seven.vercel.app/))
+- **Source Code:** ([GitHub Repository](https://github.com/Arpan783808/AI-farmer-Assistant))
 - **Additional Resources:** [Other Relevant Links](ANY OTHER RELEVANT LINKS)
 
 
