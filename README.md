@@ -183,7 +183,7 @@ VITE_FIRBASE_MEASUREMENT_ID="your_firebase_measurement_id_here"
 <img width="1466" height="900" alt="Screenshot 2025-09-21 at 8 13 59 PM" src="https://github.com/user-attachments/assets/5dd30c3f-91ab-4de2-8918-548fda82be88" />
 
 ### Chat history
-<img width="1467" height="910" alt="Screenshot 2025-09-21 at 8 14 10 PM" src="https://github.com/user-attachments/assets/b75e68d4-f4fb-4319-ab98-6ef4f3c706ea" />
+<img width="1470" height="912" alt="Screenshot 2025-09-21 at 9 24 53 PM" src="https://github.com/user-attachments/assets/a361deaa-d952-46c4-8f63-e4f1fcba117d" />
 
 ### User Profile
 <img width="1463" height="889" alt="Screenshot 2025-09-21 at 8 17 58 PM" src="https://github.com/user-attachments/assets/cc88b49b-afff-47ee-9a4f-b5ec572dee24" />
