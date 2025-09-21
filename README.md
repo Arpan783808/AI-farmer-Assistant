@@ -17,6 +17,7 @@ This README provides an overview of the project, including team details, relevan
 - **MEMBER_5** - 2022UCM2386 - [@thisisaman408](https://github.com/thisisaman408)
 - **MEMBER_6** - 2022UCM2318 - [@dhananjaysingh10](https://github.com/dhananjaysingh10)
 
+### NOTE - To test the application, directly login using the credentials mentioned in the placeholder.
 ## Project Links
 
 - **SIH Presentation:** ([Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true))([URL TO PPT UPLOADED TO GITHUB])
@@ -29,7 +30,6 @@ This README provides an overview of the project, including team details, relevan
 # AI Farmer Assistant 🧑‍🌾
 
 This is the central operational hub for the AI Farmer Assistant platform. This document provides the complete instructions for establishing a local development environment.
-
 ---
 
 ## I.Prerequisites
@@ -166,3 +166,25 @@ VITE_FIRBASE_MESSAGING_SENDER_ID="your_firebase_messaging_sender_id_here"
 VITE_FIRBASE_APP_ID="your_firebase_app_id_here"
 VITE_FIRBASE_MEASUREMENT_ID="your_firebase_measurement_id_here"
 ```
+
+### Login/signup
+<img width="1469" height="913" alt="Screenshot 2025-09-21 at 8 17 19 PM" src="https://github.com/user-attachments/assets/668257d7-2c73-4e32-afae-07e48f17208b" />
+
+### Landing Page
+<img width="1463" height="894" alt="Screenshot 2025-09-21 at 9 18 40 PM" src="https://github.com/user-attachments/assets/ad34b69c-8e0a-4856-a214-aa5b575c1fe3" />
+
+### Ask a simple query
+<img width="1463" height="900" alt="Screenshot 2025-09-21 at 8 11 25 PM" src="https://github.com/user-attachments/assets/214c51c2-f004-48a0-8714-0cfbddcebadf" />
+
+### Output
+<img width="1459" height="905" alt="Screenshot 2025-09-21 at 8 12 06 PM" src="https://github.com/user-attachments/assets/ef9a30bf-15c6-4b7e-abec-c3c373c8c1df" />
+
+### Ask a multimodal query 
+<img width="1466" height="900" alt="Screenshot 2025-09-21 at 8 13 59 PM" src="https://github.com/user-attachments/assets/5dd30c3f-91ab-4de2-8918-548fda82be88" />
+
+### Chat history
+<img width="1467" height="910" alt="Screenshot 2025-09-21 at 8 14 10 PM" src="https://github.com/user-attachments/assets/b75e68d4-f4fb-4319-ab98-6ef4f3c706ea" />
+
+### User Profile
+<img width="1463" height="889" alt="Screenshot 2025-09-21 at 8 17 58 PM" src="https://github.com/user-attachments/assets/cc88b49b-afff-47ee-9a4f-b5ec572dee24" />
+
