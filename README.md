@@ -15,7 +15,7 @@ This README provides an overview of the project, including team details, relevan
 - **MEMBER_3** - 2022UCM2320 - [@ananyak84](https://github.com/ananyak84)
 - **MEMBER_4** - 2022UCM2348 - [@HemantGupta04](https://github.com/HemantGupta04)
 - **MEMBER_5** - 2022UCM2386 - [@thisisaman408](https://github.com/thisisaman408)
-- **MEMBER_6** - 2022UCM23 - [@dhananjaysingh10](https://github.com/dhananjaysingh10)
+- **MEMBER_6** - 2022UCM2318 - [@dhananjaysingh10](https://github.com/dhananjaysingh10)
 
 ## Project Links
 
