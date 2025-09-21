@@ -20,10 +20,10 @@ This README provides an overview of the project, including team details, relevan
 ### NOTE - To test the application, directly login using the credentials mentioned in the placeholder.
 ## Project Links
 
-- **SIH Presentation:** ([Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true))
+- **SIH Presentation:** [Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true)
 - **Video Demonstration:** [Watch Video]
-- **Live Deployment:** ([View Deployment](https://ai-farmer-assistant-seven.vercel.app/))
-- **Source Code:** ([GitHub Repository](https://github.com/Arpan783808/AI-farmer-Assistant))
+- **Live Deployment:** [View Deployment](https://ai-farmer-assistant-seven.vercel.app/)
+- **Source Code:** [GitHub Repository](https://github.com/Arpan783808/AI-farmer-Assistant)
 - **Additional Resources:** [Other Relevant Links](ANY OTHER RELEVANT LINKS)
 
 
@@ -176,7 +176,7 @@ VITE_FIRBASE_MEASUREMENT_ID="your_firebase_measurement_id_here"
 ### Ask a simple query
 <img width="1463" height="900" alt="Screenshot 2025-09-21 at 8 11 25 PM" src="https://github.com/user-attachments/assets/214c51c2-f004-48a0-8714-0cfbddcebadf" />
 
-### Output
+### Output with Audio
 <img width="1459" height="905" alt="Screenshot 2025-09-21 at 8 12 06 PM" src="https://github.com/user-attachments/assets/ef9a30bf-15c6-4b7e-abec-c3c373c8c1df" />
 
 ### Ask a multimodal query 
