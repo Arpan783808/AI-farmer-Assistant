@@ -27,7 +27,7 @@ This README provides an overview of the project, including team details, relevan
 - **Additional Resources:** [Other Relevant Links](ANY OTHER RELEVANT LINKS)
 
 
-# AI Farmer Assistant 🧑‍🌾
+# AI Farmer Assistant 
 
 This document provides the complete instructions for establishing this project in a local development environment.
 ---
