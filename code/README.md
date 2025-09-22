@@ -1,6 +1,6 @@
 ##  Tasks Accomplished
 
-- [x] **User Authentication:** Engineered a secure, phone-based, passwordless authentication and session management system.
+- [x] **User Authentication:** Developed a secure, phone-based, passwordless authentication and session management system.
 - [x] **Dynamic User Profiles:** Built a persistent data model for user profiles, including critical geospatial and conversational data.
 - [x] **Multimodal Chat Interface:** Developed an intuitive, responsive interface for seamless interaction with the AI via text, voice, and imagery.
 
@@ -68,7 +68,6 @@ This server handles user authentication, chat persistence, and acts as the prima
    ```
 3. **Configure Environment Variables.** This is a critical security step. You will create a local environment file.
    ```bash
-   cd server
    cp .env.example .env
    ```
    Now, **you must open the newly created `.env` file** and populate it with your actual credentials for MongoDB, Firebase, etc.
@@ -83,7 +82,7 @@ This service contains the core intelligence: the LLM chains, transcription, and 
    ```
 2. **Install Python Dependencies.**
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements.txt #use pip3 for macos
    ```
 3. **Configure Environment Variables.** This service requires API keys for OpenAI and Google.
    ```bash
