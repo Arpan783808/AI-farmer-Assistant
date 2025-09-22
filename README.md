@@ -186,5 +186,5 @@ VITE_FIRBASE_MEASUREMENT_ID="your_firebase_measurement_id_here"
 <img width="1470" height="912" alt="Screenshot 2025-09-21 at 9 24 53 PM" src="https://github.com/user-attachments/assets/a361deaa-d952-46c4-8f63-e4f1fcba117d" />
 
 ### User Profile
-<img width="1463" height="889" alt="Screenshot 2025-09-21 at 8 17 58 PM" src="https://github.com/user-attachments/assets/cc88b49b-afff-47ee-9a4f-b5ec572dee24" />
+<img width="1470" height="922" alt="Screenshot 2025-09-22 at 2 30 42 PM" src="https://github.com/user-attachments/assets/499b79ce-9530-49cf-aa6b-109657781486" />
 
