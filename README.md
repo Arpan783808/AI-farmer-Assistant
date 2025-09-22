@@ -21,7 +21,7 @@ This README provides an overview of the project, including team details, relevan
 ## Project Links
 
 - **SIH Presentation:** [Final SIH Presentation](https://docs.google.com/presentation/d/1iwkoVMSm3qXhAQRaVnPnF1KQZeodOK3E/edit?usp=sharing&ouid=101763291021260312893&rtpof=true&sd=true)
-- **Video Demonstration:** [Watch Video]
+- **Video Demonstration:** [Watch Video](https://youtu.be/wHY4_jIVTF8)
 - **Live Deployment:** [View Deployment](https://ai-farmer-assistant-seven.vercel.app/)
 - **Source Code:** [GitHub Repository](https://github.com/Arpan783808/AI-farmer-Assistant)
 - **Additional Resources:** [Other Relevant Links](ANY OTHER RELEVANT LINKS)
@@ -29,7 +29,7 @@ This README provides an overview of the project, including team details, relevan
 
 # AI Farmer Assistant 🧑‍🌾
 
-This is the central operational hub for the AI Farmer Assistant platform. This document provides the complete instructions for establishing a local development environment.
+This document provides the complete instructions for establishing this project in a local development environment.
 ---
 
 ## I.Prerequisites
@@ -183,7 +183,7 @@ VITE_FIRBASE_MEASUREMENT_ID="your_firebase_measurement_id_here"
 <img width="1466" height="900" alt="Screenshot 2025-09-21 at 8 13 59 PM" src="https://github.com/user-attachments/assets/5dd30c3f-91ab-4de2-8918-548fda82be88" />
 
 ### Chat history
-<img width="1470" height="912" alt="Screenshot 2025-09-21 at 9 24 53 PM" src="https://github.com/user-attachments/assets/a361deaa-d952-46c4-8f63-e4f1fcba117d" />
+<img width="1470" height="921" alt="Screenshot 2025-09-22 at 2 34 44 PM" src="https://github.com/user-attachments/assets/d930e3b4-67eb-48d8-8de9-54a61ad25d66" />
 
 ### User Profile
 <img width="1470" height="922" alt="Screenshot 2025-09-22 at 2 30 42 PM" src="https://github.com/user-attachments/assets/499b79ce-9530-49cf-aa6b-109657781486" />
