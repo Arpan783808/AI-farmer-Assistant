@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import debounce from 'lodash/debounce';
+import Loading from './Loading';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -60,6 +61,7 @@ const DashboardProfile: React.FC = () => {
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); 
   const navigate = useNavigate();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:10000';
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -82,15 +84,18 @@ const DashboardProfile: React.FC = () => {
       } catch (error) {
         console.error('Error parsing currentUser from localStorage:', error);
         setError('Failed to load user data');
+        setIsLoading(false);
         navigate('/login');
       }
     } else {
       setError('No user data found in localStorage');
+      setIsLoading(false);
       navigate('/login');
     }
   }, [navigate]);
 
   const fetchUser = async (userId: string) => {
+    setIsLoading(true); 
     try {
       const response = await fetch(`${API_BASE}/api/user/${userId}`, {
         credentials: 'include',
@@ -112,8 +117,11 @@ const DashboardProfile: React.FC = () => {
       }
     } catch (err) {
       setError('Error fetching user data');
+    } finally {
+      setIsLoading(false); 
     }
   };
+
   const MapUpdater: React.FC<{ coordinates: [number, number] | null }> = ({ coordinates }) => {
     const map = useMap();
     useEffect(() => {
@@ -123,6 +131,7 @@ const DashboardProfile: React.FC = () => {
     }, [coordinates, map]);
     return null;
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'crops') {
@@ -342,284 +351,288 @@ const DashboardProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 sm:p-8 transform transition-all duration-300 hover:shadow-xl">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">User Profile</h2>
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6 sm:p-8 transform transition-all duration-300 hover:shadow-xl">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">User Profile</h2>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {success}
-          </div>
-        )}
-        {imageUploadError && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {imageUploadError}
-          </div>
-        )}
-        {imageUploadSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {imageUploadSuccess}
-          </div>
-        )}
-        {geolocationError && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {geolocationError}
-          </div>
-        )}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {success}
+            </div>
+          )}
+          {imageUploadError && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {imageUploadError}
+            </div>
+          )}
+          {imageUploadSuccess && (
+            <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {imageUploadSuccess}
+            </div>
+          )}
+          {geolocationError && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {geolocationError}
+            </div>
+          )}
 
-        {user ? (
-          <div className="space-y-6">
-            {!isEditing ? (
-              <div className="space-y-6">
-                <div className="flex justify-center">
-                  <img
-                    src={formData.profilePicture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Username</span>
-                    <p className="text-lg text-gray-800">{formData.username || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Phone</span>
-                    <p className="text-lg text-gray-800">{formData.primaryPhone || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Farm Address</span>
-                    <p className="text-lg text-gray-800">{formData.farmAddress || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Location</span>
-                    <p className="text-lg text-gray-800">
-                      {formData.location?.coordinates ? `(${formData.location.coordinates[0].toFixed(4)}, ${formData.location.coordinates[1].toFixed(4)})` : 'Not set'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Crops</span>
-                    <p className="text-lg text-gray-800">{formData.crops?.join(', ') || 'None'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Role</span>
-                    <p className="text-lg text-gray-800">{user.role === 'admin' ? 'Admin' : 'Farmer'}</p>
-                  </div>
-                </div>
-                <div className="h-64">
-                  <MapContainer
-                    center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
-                    zoom={formData.location?.coordinates ? 13 : 5}
-                    style={{ height: '100%', width: '100%' }}
-                    className="rounded-lg shadow-md"
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
-                      <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
-                    )}
-                    <MapUpdater coordinates={formData.location?.coordinates || null} />
-                  </MapContainer>
-                </div>
-                {(user.id === user.id || user.role === 'admin') && (
-                  <div className="flex justify-center space-x-4">
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors duration-200"
-                    >
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="bg-red-600 text-white px-6 py-2 rounded-full font-medium hover:bg-red-700 transition-colors duration-200"
-                    >
-                      Delete Profile
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <form onSubmit={handleUpdate} className="space-y-6">
-                <div className="flex justify-center">
-                  <div className="relative">
+          {user ? (
+            <div className="space-y-6">
+              {!isEditing ? (
+                <div className="space-y-6">
+                  <div className="flex justify-center">
                     <img
                       src={formData.profilePicture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
-                      alt="Profile Preview"
+                      alt="Profile"
                       className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
                     />
-                    <label
-                      htmlFor="profilePicture"
-                      className={`absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors duration-200 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Username</span>
+                      <p className="text-lg text-gray-800">{formData.username || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Phone</span>
+                      <p className="text-lg text-gray-800">{formData.primaryPhone || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Farm Address</span>
+                      <p className="text-lg text-gray-800">{formData.farmAddress || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Location</span>
+                      <p className="text-lg text-gray-800">
+                        {formData.location?.coordinates ? `(${formData.location.coordinates[0].toFixed(4)}, ${formData.location.coordinates[1].toFixed(4)})` : 'Not set'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Crops</span>
+                      <p className="text-lg text-gray-800">{formData.crops?.join(', ') || 'None'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-500">Role</span>
+                      <p className="text-lg text-gray-800">{user.role === 'admin' ? 'Admin' : 'Farmer'}</p>
+                    </div>
+                  </div>
+                  <div className="h-64">
+                    <MapContainer
+                      center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
+                      zoom={formData.location?.coordinates ? 13 : 5}
+                      style={{ height: '100%', width: '100%' }}
+                      className="rounded-lg shadow-md"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </label>
-                    <input
-                    title="pp"
-                      id="profilePicture"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfilePictureChange}
-                      className="hidden"
-                      disabled={isUploading}
-                    />
-                    {isUploading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                        <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input
-                      title = 'username'
-                      type="text"
-                      name="username"
-                      value={formData.username || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input
-                      title='phone'
-                      type="text"
-                      name="primaryPhone"
-                      value={formData.primaryPhone || ''}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                    />
-                  </div>
-                  <div className="sm:col-span-2 relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Farm Address (India)</label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        name="farmAddress"
-                        value={formData.farmAddress || ''}
-                        onChange={handleInputChange}
-                        onFocus={() => setShowSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
-                        placeholder="e.g., Farm in Delhi, India or Mumbai village"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                        ref={searchInputRef}
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
+                      {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
+                        <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
+                      )}
+                      <MapUpdater coordinates={formData.location?.coordinates || null} />
+                    </MapContainer>
+                  </div>
+                  {(user.id === user.id || user.role === 'admin') && (
+                    <div className="flex justify-center space-x-4">
                       <button
-                        type="button"
-                        onClick={handleGeolocation}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                        onClick={() => setIsEditing(true)}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors duration-200"
                       >
-                        Use Current Location
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="bg-red-600 text-white px-6 py-2 rounded-full font-medium hover:bg-red-700 transition-colors duration-200"
+                      >
+                        Delete Profile
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Tip: Include city or "India" for better results.</p>
-                    {showSuggestions && searchResults.length > 0 && (
-                      <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
-                        {searchResults.map((result, index) => (
-                          <li
-                            key={index}
-                            onMouseDown={() => handleSuggestionSelect(result)}
-                            className="p-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
-                          >
-                            {result.display_name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Location on Map (India-focused)</label>
-                    <div className="h-64 relative z-0">
-                      <MapContainer
-                        center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
-                        zoom={formData.location?.coordinates ? 13 : 5}
-                        style={{ height: '100%', width: '100%' }}
-                        className="rounded-lg shadow-md"
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={handleUpdate} className="space-y-6">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <img
+                        src={formData.profilePicture || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'}
+                        alt="Profile Preview"
+                        className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-md"
+                      />
+                      <label
+                        htmlFor="profilePicture"
+                        className={`absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors duration-200 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <TileLayer
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        />
-                        {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
-                          <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
-                        )}
-                        <MapUpdater coordinates={formData.location?.coordinates || null} />
-                        <MapClickHandler />
-                      </MapContainer>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </label>
+                      <input
+                        title="pp"
+                        id="profilePicture"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePictureChange}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                          <svg className="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">Click on the map to set the farm location (zoom/pan to India if needed).</p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Crops (comma-separated)</label>
-                    <input
-                      type="text"
-                      name="crops"
-                      value={formData.crops?.join(', ') || ''}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Wheat, Rice, Cotton"
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        title="username"
+                        type="text"
+                        name="username"
+                        value={formData.username || ''}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input
+                        title="phone"
+                        type="text"
+                        name="primaryPhone"
+                        value={formData.primaryPhone || ''}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Farm Address (India)</label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          name="farmAddress"
+                          value={formData.farmAddress || ''}
+                          onChange={handleInputChange}
+                          onFocus={() => setShowSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowSuggestions(false), 300)}
+                          placeholder="e.g., Farm in Delhi, India or Mumbai village"
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                          ref={searchInputRef}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGeolocation}
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
+                        >
+                          Use Current Location
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Tip: Include city or "India" for better results.</p>
+                      {showSuggestions && searchResults.length > 0 && (
+                        <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto shadow-lg">
+                          {searchResults.map((result, index) => (
+                            <li
+                              key={index}
+                              onMouseDown={() => handleSuggestionSelect(result)}
+                              className="p-3 hover:bg-blue-50 cursor-pointer text-gray-800 border-b border-gray-100 last:border-b-0"
+                            >
+                              {result.display_name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Location on Map (India-focused)</label>
+                      <div className="h-64 relative z-0">
+                        <MapContainer
+                          center={formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] ? [formData.location.coordinates[1], formData.location.coordinates[0]] : [20.5937, 78.9629]}
+                          zoom={formData.location?.coordinates ? 13 : 5}
+                          style={{ height: '100%', width: '100%' }}
+                          className="rounded-lg shadow-md"
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          />
+                          {formData.location?.coordinates?.[1] && formData.location?.coordinates?.[0] && (
+                            <Marker position={[formData.location.coordinates[1], formData.location.coordinates[0]]} />
+                          )}
+                          <MapUpdater coordinates={formData.location?.coordinates || null} />
+                          <MapClickHandler />
+                        </MapContainer>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">Click on the map to set the farm location (zoom/pan to India if needed).</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Crops (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="crops"
+                        value={formData.crops?.join(', ') || ''}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Wheat, Rice, Cotton"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-center space-x-4">
-                  <button
-                    type="submit"
-                    className={`bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={isUploading}
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setFormData((prev) => ({ ...prev, profilePicture: user?.profilePicture || '' }));
-                      setImageFile(null);
-                      setSearchResults([]);
-                      setShowSuggestions(false);
-                      setError(null);
-                    }}
-                    className="bg-gray-300 text-gray-800 px-6 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500">No user data available.</p>
-        )}
-      </div>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      type="submit"
+                      className={`bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-colors duration-200 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={isUploading}
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setFormData((prev) => ({ ...prev, profilePicture: user?.profilePicture || '' }));
+                        setImageFile(null);
+                        setSearchResults([]);
+                        setShowSuggestions(false);
+                        setError(null);
+                      }}
+                      className="bg-gray-300 text-gray-800 px-6 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500">No user data available.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

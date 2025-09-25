@@ -11,6 +11,7 @@ import {
   ConfirmationResult,
 } from "firebase/auth";
 import { Link } from "react-router-dom";
+import { HiHome } from "react-icons/hi2";
 // We must explicitly tell TypeScript about the properties we are adding to the window object.
 declare global {
   interface Window {
@@ -30,7 +31,7 @@ function Authentication() {
   // OTP verification states
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState("123456");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [userName, setuserName] = useState("User");
   const recaptchaContainerRef = useRef<HTMLDivElement | null>(null);
@@ -40,12 +41,12 @@ function Authentication() {
     (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:10000";
 
   const [loginData, setLoginData] = useState({
-    phone: "",
+    phone: "+917838080418",
   });
   useDocumentTitle("GetStarted - AIChatApp");
   const [signupData, setSignupData] = useState({
     username: "",
-    phone: "",
+    phone: "+917838080418",
     password: "",
     confirmPassword: "",
     farmAddress: "",
@@ -251,10 +252,8 @@ function Authentication() {
             to="/"
             className="absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
           >
-            <div className="cursor-pointer w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
-              🌱
-            </div>
-            <span className="text-sm font-medium">Back</span>
+            <HiHome className="w-5 h-5" />
+            <span>Home</span>
           </Link>
           <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
             {/* Left Panel - Image */}
@@ -333,10 +332,8 @@ function Authentication() {
           onClick={() => navigate("/")}
           className="cursor-pointer absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
         >
-          <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
-            🌱
-          </div>
-          <span className="text-sm font-medium">Back</span>
+          <HiHome className="w-5 h-5" />
+          <span>Home</span>
         </a>
         <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Left Panel - Image */}
@@ -433,10 +430,8 @@ function Authentication() {
         onClick={() => navigate("/")}
         className="cursor-pointer absolute top-4 left-4 flex items-center gap-2 text-green-600 hover:text-green-700"
       >
-        <div className="w-10 h-10 bg-white/90 rounded-xl flex items-center justify-center text-2xl shadow">
-          🌱
-        </div>
-        <span className="text-sm font-medium">Back</span>
+        <HiHome className="w-5 h-5" />
+        <span>Home</span>
       </a>
       <div className="flex w-full max-w-4xl h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Left Panel - Image */}
@@ -493,11 +488,10 @@ function Authentication() {
             {/* Tab Navigation */}
             <div className="flex bg-green-500/10 rounded-lg p-1 mb-8">
               <button
-                className={`flex-1 py-3 px-4 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${
-                  isLogin
+                className={`flex-1 py-3 px-4 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${isLogin
                     ? "bg-white text-green-500 shadow-sm"
                     : "text-gray-600"
-                }`}
+                  }`}
                 onClick={() => {
                   setIsLogin(true);
                   resetVerification();
@@ -506,11 +500,10 @@ function Authentication() {
                 Login
               </button>
               <button
-                className={`flex-1 py-3 px-4 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${
-                  !isLogin
+                className={`flex-1 py-3 px-4 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${!isLogin
                     ? "bg-white text-green-500 shadow-sm"
                     : "text-gray-600"
-                }`}
+                  }`}
                 onClick={() => {
                   setIsLogin(false);
                   resetVerification();
@@ -652,20 +645,16 @@ function Authentication() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <span className="font-bold text-base">G</span>
-                    Google
-                  </button>
-                  <button
-                    type="button"
-                    className="py-3 px-4 bg-white text-gray-700 border-2 border-gray-200 rounded-lg text-sm font-medium hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
-                  >
-                    <span className="text-base">🍎</span>
-                    Apple
-                  </button>
+
+
+                  <div className="col-span-2 mt-3 text-center">
+                    <p className="text-sm font-medium text-gray-700">
+                      Demo Phone: <span className="font-bold">+917838080418</span>
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">
+                      OTP: <span className="font-bold">123456</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -837,9 +826,8 @@ function Authentication() {
                             <div
                               className="h-full transition-all duration-300"
                               style={{
-                                width: `${
-                                  (passwordStrength.strength / 3) * 100
-                                }%`,
+                                width: `${(passwordStrength.strength / 3) * 100
+                                  }%`,
                                 backgroundColor: passwordStrength.color,
                               }}
                             ></div>

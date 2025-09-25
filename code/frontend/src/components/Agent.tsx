@@ -22,6 +22,7 @@ import useDocumentTitle from "@/hooks/UseDocumentTitle";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import farmingHero from "../../public/placeholder.svg";
 import { useNavigate } from "react-router-dom";
+import { HiHome } from "react-icons/hi";
 // Types
 interface Chat {
   id: string;
@@ -1137,8 +1138,8 @@ const Agent: React.FC = () => {
         onClick={() => navigate("/")}
         className="cursor-pointer fixed top-4 right-4 z-50 inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-white/90 backdrop-blur border border-gray-200 shadow hover:bg-white transition-colors"
       >
-        <span>Back</span>
-        <span className="text-lg">🏠</span>
+        <HiHome className="w-5 h-5" />
+        <span>Home</span>
       </a>
       <div className="fixed top-0 left-0 right-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border lg:hidden">
         <div className="flex items-center justify-between p-4">

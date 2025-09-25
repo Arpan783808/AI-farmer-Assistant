@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Loading from './Loading';
 
 interface Crop {
   cropId: string;
@@ -150,8 +151,8 @@ export const CropManagement: React.FC = () => {
   const pages = Math.ceil(total / limit);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-900 ">Crop Management</h2>
+    <div className="p-6 max-w-7xl mx-auto relative min-h-[calc(100vh-4rem)]">
+      <h2 className="text-3xl font-bold text-gray-900 mb-6">Crop Management</h2>
       <button
         onClick={openAddModal}
         className="mb-6 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out"
@@ -163,9 +164,8 @@ export const CropManagement: React.FC = () => {
       </button>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-300">Loading...</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-100 rounded-lg">
+          <Loading />
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg shadow-md">
