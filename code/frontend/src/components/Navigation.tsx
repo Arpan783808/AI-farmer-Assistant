@@ -15,7 +15,7 @@ export const Navigation = () => {
 
     return () => unsubscribe();
   }, []);
-
+  
   const handleLogout = async () => {
     try {
       const logoutResponse = await fetch(`${API_BASE}/api/logout`, {
